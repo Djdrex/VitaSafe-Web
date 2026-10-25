@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vs-test-'));process.env.DATA_DIR=dir;const {server,db,ensureReady}=require('../server');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vs-test-'));process.env.DATA_DIR=dir;process.env.DEMO_MODE='false';const {server,db,ensureReady}=require('../server');
 let base;test.before(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port});test.after(()=>{server.close();db.close();fs.rmSync(dir,{recursive:true,force:true})});
 test('health endpoint',async()=>{const r=await fetch(base+'/api/health');assert.equal(r.status,200);assert.equal((await r.json()).mode,'private')});
 test('private products hidden from visitors',async()=>{const r=await fetch(base+'/api/products');assert.equal(r.status,403)});
