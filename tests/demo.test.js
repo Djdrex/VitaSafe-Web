@@ -1,0 +1,7 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vs-demo-test-'));process.env.DATA_DIR=dir;process.env.DEMO_MODE='true';const {server,db}=require('../server');
+let base;test.before(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port});test.after(()=>{server.close();db.close();fs.rmSync(dir,{recursive:true,force:true})});
+test('demo health identifies nonpersistent demonstration',async()=>{const r=await fetch(base+'/api/health');assert.equal(r.status,200);assert.deepEqual(await r.json(),{ok:true,mode:'demo',persistent:false})});
+test('demo catalogue is visible without an account',async()=>{const r=await fetch(base+'/api/products');assert.equal(r.status,200);assert.equal((await r.json()).products.length,6)});
+test('demo rejects registration and purchases without storing records',async()=>{for(const p of ['/api/account/register','/api/order']){const r=await fetch(base+p,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(r.status,403)}assert.equal(db.prepare('SELECT COUNT(*) n FROM users').get().n,0);assert.equal(db.prepare('SELECT COUNT(*) n FROM orders').get().n,0)});
+test('demo rejects administrative mutations',async()=>{const r=await fetch(base+'/api/admin/products/campus',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({price:1})});assert.equal(r.status,403)});
