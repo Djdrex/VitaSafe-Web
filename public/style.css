@@ -9,3 +9,6 @@ html[data-theme="dark"] .top nav.open,html[data-theme="dark"] .productFoot butto
 html[data-theme="dark"] .notice{background:#294236;color:#e7f0e9}html[data-theme="dark"] .notice.warning{background:#4d3c27}html[data-theme="dark"] .adminTable td,html[data-theme="dark"] .adminTable th{border-color:#35493d}html[data-theme="dark"] .field label{color:#b5d0bf}
 
 .kitTag{display:inline-block;background:#edf4eb;color:#245d42;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:12px}.iconPicker{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:10px 0}.iconPicker button{background:#f3f7f2;border:1px solid #cfdccf;border-radius:8px;font-size:22px;padding:7px;cursor:pointer}.iconPicker button:hover,.iconPicker button:focus{background:#d9ead9;border-color:#3b8055}.imagePreview{display:block;max-width:220px;max-height:160px;object-fit:contain;border-radius:8px;margin:10px 0}.imagePreview:not([src]){display:none}@media(max-width:580px){.iconPicker{grid-template-columns:repeat(6,1fr)}}
+
+button:disabled,input:disabled,select:disabled,textarea:disabled{cursor:not-allowed;opacity:.65}.adminTableWrap{overflow-x:auto}
+@media(max-width:580px){.topactions #adminBtn{max-width:104px;white-space:normal;line-height:1.15}.logo img{max-width:28px}.adminTop{align-items:flex-start;gap:8px}.adminTop h2{overflow-wrap:anywhere}}
