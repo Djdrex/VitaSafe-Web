@@ -1,18 +1,19 @@
 {
   "name": "vitasafe-web",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "VitaSafe private-first ecommerce and operations MVP",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/*.test.js",
+    "test": "node --test --test-concurrency=1 tests/v06*.test.js tests/password.test.js tests/scheduling.test.js tests/migration.test.js",
     "db:migrate": "node scripts/migrate-postgres.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.16.0"
   },
   "dependencies": {
-    "pg": "8.23.1",
-    "@electric-sql/pglite": "0.5.11"
+    "@electric-sql/pglite": "0.5.11",
+    "exceljs": "4.4.0",
+    "pg": "8.23.1"
   }
 }
