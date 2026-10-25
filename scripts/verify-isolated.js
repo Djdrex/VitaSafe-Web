@@ -64,7 +64,8 @@ async function verifyIsolated(db,env){
   const marker=await db.prepare('SELECT v FROM sync_state WHERE k=?').get('isolated_persistence_marker');
   if(!marker)await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?)').run('isolated_persistence_marker',crypto.randomUUID());
   const driveStatus=await (await request('/api/admin/onedrive/status','GET',null,adminCookie)).json();
-  const report={onedrive_configured:driveStatus.configured===true,onedrive_connected:driveStatus.connected===true,demo:true,checks:['catalogue','admin_login','wrong_password','customer_role_denied_admin','registration_blocked','sales_blocked','excel_four_modules','inventory_validation'],previous_marker:!!marker,database:db.kind,controlled_import:env.EXCEL_TEST_IMPORT_ENABLED==='true'};
+  const commerce=await require('./verify-commerce').verifyCommerceHTTP(db,request,adminCookie,customerCookie,base);
+  const report={commerce,onedrive_configured:driveStatus.configured===true,onedrive_connected:driveStatus.connected===true,demo:true,checks:['catalogue','admin_login','wrong_password','customer_role_denied_admin','registration_blocked','sales_blocked','excel_four_modules','inventory_validation'],previous_marker:!!marker,database:db.kind,controlled_import:env.EXCEL_TEST_IMPORT_ENABLED==='true'};
   await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run('isolated_last_verification',JSON.stringify(report));
   return report;
  }finally{await new Promise(r=>app.server.close(r));await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(customerCookie.slice(11)));if(adminCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(adminCookie.slice(11)))}
