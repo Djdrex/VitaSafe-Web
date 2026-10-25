@@ -1,3 +1,18 @@
+# Verificación real del entorno aislado — 25 octubre 2026
+
+Main y servicio público sin cambios; PR #2 sigue en borrador.
+
+- PostgreSQL interno real verificado por el arranque HTTP del servicio de pruebas. Deploy inicial Live dep-dbf22tpsrm7s73bga8tg; marcador previo false. Segundo arranque Live dep-dbf29mg473hc73bjp79g: previous_marker=true en instancia distinta, sin pérdida del cliente ficticio ni catálogo.
+- Deploy Live dep-dbf2c0ivcj2c73ej9ivg: 19 pruebas aprobadas durante build y verificación runtime database=postgres, controlled_import=true, previous_marker=true.
+- Login administrativo real por HTTP de loopback con variables seguras, clave incorrecta rechazada. Cliente ficticio autentica con contraseña válida y recibe 403 en demo; una sesión de cliente no accede a administración (401). Registro y ventas siguen bloqueados.
+- Exportación/vista previa de cuatro módulos y stock negativo/fraccionario rechazado. Ruta /api/admin/excel/test-apply restringida a administrador, DEMO_MODE=true, VITASAFE_TEST_ENV=true y EXCEL_TEST_IMPORT_ENABLED=true. Solo productos DEMO- inactivos y nombres FICTICIO, inventario de IDs DEMO-, historial ficticio y métricas DEMO-. La importación normal sigue bloqueada. Ensayo real: producto ficticio y ajuste de stock aprobados, lote inválido revertido íntegramente y cambio a campus rechazado.
+- Aviso GHSA-w5hq-g745-h8pq: uuid <11.1.1 causaba dos hallazgos moderados (uuid y ExcelJS por dependencia). Override específico ExcelJS → uuid 11.1.1; no se rebaja ExcelJS. npm audit local: 0 vulnerabilidades. Prueba adicional verifica formato condicional extendido ExcelJS.
+- Se añadió normalización acotada del XML SpreadsheetML y relaciones de tablas absolutas para archivos XLSX válidos que ExcelJS no interpreta directamente. Se mantienen límites ZIP y rechazo de fórmulas/contenido activo. Prueba de regresión nueva; resultados finales de este parche pendientes de despliegue al momento de guardar este documento.
+- Libro de revisión independiente: 11 hojas con datos completamente ficticios. products, inventory, orders, reports coinciden con las columnas del sistema; resto vistas analíticas o propuestas. Comprobadas fórmulas, conciliación de 121 unidades, ingresos S/347.60 y ticket S/173.80. No cargar el libro completo: copiar valores de la hoja compatible a la plantilla del módulo; importador usa primera hoja y rechaza fórmulas.
+- OneDrive: OAuth/Graph con transporte simulado verificado; no se ha realizado consentimiento, subida real ni automatización. Debe revisarse primero el Excel y configurar aplicación Microsoft, callback y secretos seguros. ONEDRIVE_AUTO_SYNC=false. No se han pedido ni expuesto contraseñas.
+
+La autorización del propietario permite base de pruebas limpia, sin migrar SQLite antiguo. No volver a exigir ese respaldo para este ensayo. Los registros siguientes son documentación histórica y no sustituyen los resultados de arriba.
+
 # VitaSafe v0.6 — etapa de desarrollo
 
 ## Actualización autorizada: entorno limpio de pruebas
