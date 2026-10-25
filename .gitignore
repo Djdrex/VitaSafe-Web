@@ -7,3 +7,6 @@ data/
 *.sqlite-*
 .DS_Store
 coverage/
+backups/
+migration-backups/
+*.pgdump
