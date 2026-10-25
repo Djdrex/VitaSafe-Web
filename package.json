@@ -1,11 +1,11 @@
 {
   "name": "vitasafe-web",
-  "version": "0.6.0",
+  "version": "0.9.0-preview",
   "private": true,
   "description": "VitaSafe private-first ecommerce and operations MVP",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test --test-concurrency=1 tests/v06*.test.js tests/password.test.js tests/scheduling.test.js tests/migration.test.js",
+    "test": "node --test --test-concurrency=1 tests/v06*.test.js tests/v1*.test.js tests/password.test.js tests/scheduling.test.js tests/migration.test.js",
     "db:migrate": "node scripts/migrate-postgres.js"
   },
   "engines": {

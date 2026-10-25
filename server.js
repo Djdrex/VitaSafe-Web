@@ -21,6 +21,7 @@ const DEMO_MODE = environment.DEMO_MODE === 'true';
 const PORT = Number(environment.PORT || 3000),
   ROOT = __dirname;
 const db = options.database || (await openDatabase(environment, options));
+if(environment.VITASAFE_TEST_ENV==='true')await require('./src/commerce/core').migrate(db);
 const defaults = {
   brand: 'VitaSafe',
   tagline: 'Prepárate hoy, vive más tranquilo',
@@ -130,7 +131,7 @@ async function customer(req) {
   return await sessionUser(req);
 }
 function customerCookie(res, t, maxAge = 604800) {
-  res.setHeader('Set-Cookie', `vs_customer=${t}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${environment.COOKIE_SECURE === 'true' ? '; Secure' : ''}`);
+  res.setHeader('Set-Cookie', `vs_session=${t}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${environment.COOKIE_SECURE === 'true' ? '; Secure' : ''}`);
 }
 async function audit(kind, ref, detail = '') {
   await db.prepare('INSERT INTO audit_log(kind,ref,detail) VALUES(?,?,?)').run(kind, ref, detail);
@@ -151,10 +152,11 @@ function csvDownload(res, name, rows) {
 }
 function checkOrigin(req) {
   const o = req.headers.origin;
+  if(req.headers['sec-fetch-site']==='cross-site')fail(403,'Origen no permitido');
   if (o) {
     const h = req.headers.host;
     try {
-      if (new URL(o).host !== h) fail(403, 'Origen no permitido');
+      if (new URL(o).host !== h || !['http:','https:'].includes(new URL(o).protocol)) fail(403, 'Origen no permitido');
     } catch (e) {
       if (e.status) throw e;
       fail(403, 'Origen no permitido');
@@ -210,10 +212,11 @@ async function api(req, res, u) {
     isAdmin = await admin(req),
     priv = s.private_mode === 'true';
   if (m !== 'GET') checkOrigin(req);
+  if (await require('./src/commerce/http').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
   if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
   if (p === '/api/health') return json(res, 200, {
     ok: true,
-    version: '0.6.0',
+    version: '0.9.0-preview',
     mode: DEMO_MODE ? 'demo' : priv ? 'private' : 'public',
     database: db.kind,
     persistent: db.persistent
@@ -234,11 +237,11 @@ async function api(req, res, u) {
     try {
       await db.prepare('INSERT INTO users(id,email,name,password_hash,role) VALUES(?,?,?,?,?)').run(id, email, name, encoded, 'customer');
     } catch (e) {
-      if (/UNIQUE/.test(e.message)) fail(409, 'El correo ya está registrado');
+      if (e.code === '23505' || /UNIQUE/.test(e.message)) fail(409, 'El correo ya está registrado');
       throw e;
     }
     const t = token();
-    await db.prepare('INSERT INTO customer_sessions(token_hash,user_id,expires) VALUES(?,?,?)').run(hash(t), id, Date.now() + 604800000);
+    await db.prepare('INSERT INTO sessions(token_hash,user_id,expires) VALUES(?,?,?)').run(hash(t), id, Date.now() + 604800000);
     customerCookie(res, t);
     await audit('customer_registered', id);
     return json(res, 201, {
@@ -657,6 +660,11 @@ const {
   startSyncWorker
 } = require('./src/integrations');
 const handler = async (req, res) => {
+    res.setHeader('Referrer-Policy','no-referrer');
+    res.setHeader('X-Content-Type-Options','nosniff');
+    res.setHeader('X-Frame-Options','DENY');
+    if(environment.COOKIE_SECURE==='true')res.setHeader('Strict-Transport-Security','max-age=31536000');
+    if(DEMO_MODE)res.setHeader('X-Robots-Tag','noindex, nofollow');
     try {
       const u = new URL(req.url, 'http://localhost');
       if (u.pathname.startsWith('/api/')) return await api(req, res, u);
@@ -693,8 +701,9 @@ const handler = async (req, res) => {
       } else res.end();
     });
   });
+server.requestTimeout=30000;server.headersTimeout=15000;
 if(options.startWorkers){const stop=startSyncWorker(db,environment);server.on('close',stop)}
 return {server,db,ensureReady};
 }
-if(require.main===module){createApp({startWorkers:true}).then(({server})=>server.listen(Number(process.env.PORT||3000),process.env.HOST||"0.0.0.0",()=>console.log("VitaSafe v0.6 started"))).catch(()=>{console.error("VitaSafe startup failed; check database and owner configuration securely");process.exitCode=1})}
+if(require.main===module){createApp({startWorkers:true}).then(({server})=>server.listen(Number(process.env.PORT||3000),process.env.HOST||"0.0.0.0",()=>console.log("VitaSafe v0.9 preview started"))).catch(()=>{console.error("VitaSafe startup failed; check database and owner configuration securely");process.exitCode=1})}
 module.exports={createApp};
