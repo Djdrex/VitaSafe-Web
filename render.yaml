@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: vitasafe-demo
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: DEMO_MODE
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: VITASAFE_ADMIN_PASSWORD
+        generateValue: true

@@ -1,0 +1,25 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vs-test-'));process.env.DATA_DIR=dir;const {server,db,ensureReady}=require('../server');
+let base;test.before(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port});test.after(()=>{server.close();db.close();fs.rmSync(dir,{recursive:true,force:true})});
+test('health endpoint',async()=>{const r=await fetch(base+'/api/health');assert.equal(r.status,200);assert.equal((await r.json()).mode,'private')});
+test('private products hidden from visitors',async()=>{const r=await fetch(base+'/api/products');assert.equal(r.status,403)});
+test('guest order blocked in private mode',async()=>{const r=await fetch(base+'/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});assert.equal(r.status,403)});
+test('tracking unknown order does not leak information',async()=>{const r=await fetch(base+'/api/track/VS-UNKNOWN?key=bad');assert.equal(r.status,404)});
+test('public readiness gate rejects empty legal settings',()=>{assert.ok(ensureReady({business_name:'',ruc:'',support_email:'',whatsapp:'',privacy_url:'',terms_url:'',complaints_enabled:'false'}).length>0)});
+test('seeded products are six',()=>{assert.equal(db.prepare('SELECT COUNT(*) n FROM products').get().n,6)});
+test('order remains private, reserves inventory and is idempotent',async()=>{
+ process.env.VITASAFE_ADMIN_PASSWORD='dev-only-password-123456';
+ const login=await fetch(base+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:process.env.VITASAFE_ADMIN_PASSWORD})});assert.equal(login.status,200);
+ const cookie=login.headers.get('set-cookie').split(';')[0];
+ const headers={'Content-Type':'application/json',Cookie:cookie};
+ const edit=await fetch(base+'/api/admin/products/campus',{method:'PATCH',headers,body:JSON.stringify({price:6990,stock:3})});assert.equal(edit.status,200);
+ const payload={customer:'Prueba Cliente',phone:'999999999',delivery_type:'pickup',requested_date:new Date(Date.now()+3*86400000).toISOString().slice(0,10),requested_time:'10:00',payment_method:'manual',items:[{id:'campus',qty:2}],idempotency_key:'unique-operation-000000000001'};
+ const create=await fetch(base+'/api/order',{method:'POST',headers,body:JSON.stringify(payload)});assert.equal(create.status,201);const data=await create.json();assert.ok(data.order.secret);
+ assert.equal(db.prepare('SELECT stock FROM products WHERE id=?').get('campus').stock,1);
+ const retry=await fetch(base+'/api/order',{method:'POST',headers,body:JSON.stringify(payload)});assert.equal(retry.status,200);assert.equal(db.prepare('SELECT stock FROM products WHERE id=?').get('campus').stock,1);
+ const invalid=await fetch(base+'/api/track/'+data.order.id+'?key=wrong');assert.equal(invalid.status,404);
+ const valid=await fetch(base+'/api/track/'+data.order.id+'?key='+encodeURIComponent(data.order.secret));assert.equal(valid.status,200);
+ const cancel=await fetch(base+'/api/admin/orders/'+data.order.id,{method:'PATCH',headers,body:JSON.stringify({status:'cancelled'})});assert.equal(cancel.status,200);
+ assert.equal(db.prepare('SELECT stock FROM products WHERE id=?').get('campus').stock,3);
+ const reactivate=await fetch(base+'/api/admin/orders/'+data.order.id,{method:'PATCH',headers,body:JSON.stringify({status:'confirmed'})});assert.equal(reactivate.status,409);
+});
