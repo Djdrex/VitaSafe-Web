@@ -210,7 +210,7 @@ async function api(req, res, u) {
     isAdmin = await admin(req),
     priv = s.private_mode === 'true';
   if (m !== 'GET') checkOrigin(req);
-  if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
+  if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
   if (p === '/api/health') return json(res, 200, {
     ok: true,
     version: '0.6.0',
