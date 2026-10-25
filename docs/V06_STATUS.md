@@ -1,5 +1,16 @@
 # VitaSafe v0.6 — etapa de desarrollo
 
+## Actualización autorizada: entorno limpio de pruebas
+
+El propietario confirmó que el SQLite anterior era descartable y autorizó usar una base limpia SIN migrar esos registros. No se requiere ese respaldo para el entorno aislado. Las instrucciones históricas de migración de abajo no son un bloqueo para este ensayo limpio. Main y el servicio público siguen intactos.
+
+Servicio separado gratuito: vitasafe-v06-pr2-test, srv-dbf1pi0473hc73bi5kog, Oregon, rama v06-postgres-excel-onedrive, autoDeploy=no. Base existente exclusivamente dpg-dbep767avr4c73bll9u0-a, conexiones externas cerradas. Falta configurar DATABASE_URL interna y VITASAFE_ADMIN_PASSWORD directamente en Render, sin publicar valores. No se ha verificado todavía conexión ni persistencia en Render.
+
+Inicio del servicio aislado: node scripts/verify-isolated.js && npm start. Requiere VITASAFE_TEST_ENV=true y DEMO_MODE=true; rechaza un hostname distinto del interno de la base autorizada. Verifica acceso por rol mediante HTTP de loopback, catálogo de 6 productos, lectura del panel, bloqueo de ventas/registros/importación aplicada, exportación y vista previa de los 4 módulos Excel y cantidades negativas/fraccionarias inválidas. Crea solo un cliente marcado FICTICIO con correo example.invalid y contraseña aleatoria no expuesta; nunca crea ventas. Registra isolated_persistence_marker e isolated_last_verification en sync_state. previous_marker=true solo indica un marcador previo: para acreditar reinicio real hay que identificar dos ejecuciones correspondientes a dos arranques distintos de Render. La prueba local cierra y reabre PGlite.
+
+Pruebas locales actuales: 18 aprobadas. OneDrive sigue preparado pero no autorizado ni conectado realmente. EXCEL_IMPORT_ENABLED=false, ONEDRIVE_AUTO_SYNC=false. No fusionar el PR ni cambiar el despliegue público sin presentar resultados y obtener aprobación expresa.
+
+
 Esta rama NO acredita una migración del servicio desplegado. Mantener DEMO_MODE=true.
 
 ## Implementado y probado localmente
