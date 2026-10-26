@@ -1,5 +1,15 @@
 # VitaSafe v0.9.0-preview — resultados verificados
 
+## Actualización: recorrido autenticado en navegador completado
+
+Esta actualización sustituye el pendiente de navegación administrativa indicado en el informe inicial. Se inició sesión mediante el formulario seguro con la cuenta existente, sin cambiar ni revelar la contraseña. Se abrió el panel, Datos y Excel y Configuración; los controles comerciales permanecen deshabilitados. La sesión persistió después de recargar el laboratorio.
+
+Se creó desde la interfaz el pedido ficticio `DEMO-39c3171a-b988-42b6-a032-7c5cd32bad2e`: tres kits a S/ 69.90, total S/ 209.70. El stock pasó de 10 a 7. Se verificaron pago simulado aprobado, preparación, envío y entrega. Se descargó el informe real del servidor y se leyó con ExcelJS: diez hojas, ingreso S/ 209.70 y pedido presente. Después se simuló el reembolso: el stock siguió en 7; al registrar la recepción física volvió a 10. Tras recargar, el pedido y la sesión seguían disponibles, los ingresos eran S/ 0.00 y no había pedidos pendientes.
+
+Evidencia: [captura autenticada](V09_NAVEGADOR.jpg) y [Excel ficticio descargado antes del reembolso](V09_INFORME_FICTICIO.xlsx). El Excel representa el momento de la entrega, no el estado posterior al reembolso. No sustituye el libro de demostración anterior. No se realizaron cobros, entregas ni operaciones comerciales reales.
+
+OneDrive sigue sin configurar y sus botones de autorización/sincronización aparecen deshabilitados. La prueba móvil y la restauración externa completa siguen pendientes. Las cantidades se comprobaron con el control numérico; no se acredita todavía una revisión exhaustiva de entrada por teclado, accesibilidad o dispositivos físicos.
+
 Fecha: 25 de octubre de 2026. No es candidata comercial v1.0.
 
 ## Publicación y aislamiento
