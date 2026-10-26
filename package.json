@@ -1,6 +1,6 @@
 {
   "name": "vitasafe-web",
-  "version": "0.9.0-preview",
+  "version": "0.10.0-preview",
   "private": true,
   "description": "VitaSafe private-first ecommerce and operations MVP",
   "scripts": {

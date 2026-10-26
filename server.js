@@ -21,7 +21,7 @@ const DEMO_MODE = environment.DEMO_MODE === 'true';
 const PORT = Number(environment.PORT || 3000),
   ROOT = __dirname;
 const db = options.database || (await openDatabase(environment, options));
-if(environment.VITASAFE_TEST_ENV==='true')await require('./src/commerce/core').migrate(db);
+if(environment.VITASAFE_TEST_ENV==='true'){await require('./src/commerce/core').migrate(db);await require('./src/platform').migrate(db);}
 const defaults = {
   brand: 'VitaSafe',
   tagline: 'Prepárate hoy, vive más tranquilo',
@@ -212,11 +212,12 @@ async function api(req, res, u) {
     isAdmin = await admin(req),
     priv = s.private_mode === 'true';
   if (m !== 'GET') checkOrigin(req);
+  if (await require('./src/platform').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
   if (await require('./src/commerce/http').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
   if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
   if (p === '/api/health') return json(res, 200, {
     ok: true,
-    version: '0.9.0-preview',
+    version: '0.10.0-preview',
     mode: DEMO_MODE ? 'demo' : priv ? 'private' : 'public',
     database: db.kind,
     persistent: db.persistent
@@ -677,7 +678,7 @@ const handler = async (req, res) => {
         'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'no-store',
-        'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-src 'self'; media-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
         'Referrer-Policy': 'no-referrer',
         'X-Frame-Options': 'DENY'
       });
@@ -705,5 +706,5 @@ server.requestTimeout=30000;server.headersTimeout=15000;
 if(options.startWorkers){const stop=startSyncWorker(db,environment);server.on('close',stop)}
 return {server,db,ensureReady};
 }
-if(require.main===module){createApp({startWorkers:true}).then(({server})=>server.listen(Number(process.env.PORT||3000),process.env.HOST||"0.0.0.0",()=>console.log("VitaSafe v0.9 preview started"))).catch(()=>{console.error("VitaSafe startup failed; check database and owner configuration securely");process.exitCode=1})}
+if(require.main===module){createApp({startWorkers:true}).then(({server})=>server.listen(Number(process.env.PORT||3000),process.env.HOST||"0.0.0.0",()=>console.log("VitaSafe v0.10 preview started"))).catch(()=>{console.error("VitaSafe startup failed; check database and owner configuration securely");process.exitCode=1})}
 module.exports={createApp};
