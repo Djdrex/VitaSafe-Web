@@ -2,7 +2,7 @@
 
 ## Punto de continuidad
 
-- Versión en preparación: **0.10.0-preview**, NO v1.0 lista para lanzamiento.
+- Versión desplegada en pruebas: **0.10.0-preview**, NO v1.0 lista para lanzamiento.
 - Rama: `v06-postgres-excel-onedrive`; PR #2 en borrador, sin fusión.
 - Último commit confirmado al iniciar: `2fada7fa5a932899f5d36060270c1ac44b24d01e` (evidencia v0.9).
 - Último código desplegado al iniciar: `57c3f9ff955743a76f7612fd8eff6dc8d9650d1e`.
@@ -32,7 +32,7 @@ El estado v0.9 tenía un laboratorio administrativo, no un checkout comercial co
 
 ## Verificación incremental
 
-Suite ampliada final: 44 pruebas aprobadas, cero fallos, incluyendo el ajuste de métricas agregadas. Incluye revisión/publicación, autorización Premium, año bisiesto, renovaciones concurrentes, cancelación/suspensión/reembolso, cola, 17 hojas, respaldo/restauración local y cifrado/tamper. La ejecución en Render está pendiente. Las pruebas locales usan PGlite y no equivalen por sí mismas a PostgreSQL 18 remoto ni a móvil real.
+Suite ampliada final: 47 pruebas aprobadas localmente y en Render, cero fallos. Incluye ediciones concurrentes, recuperación de trabajos interrumpidos y permisos HTTP de descarga. Incluye revisión/publicación, autorización Premium, año bisiesto, renovaciones concurrentes, cancelación/suspensión/reembolso, cola, 17 hojas, respaldo/restauración local y cifrado/tamper. Render npm ci informó cero vulnerabilidades. Las pruebas locales usan PGlite y no equivalen por sí mismas a PostgreSQL 18 remoto ni a móvil real.
 
 ## Límites y bloqueos que NO se ocultan
 
@@ -65,4 +65,18 @@ Aprobar catálogo auténtico, fotos, costos/precios/cobertura, beneficios y cond
 
 Para Perú: mantener como borradores los datos empresariales, términos, privacidad/datos personales, cambios/devoluciones, Libro de Reclamaciones, contacto, entrega, suscripciones y comprobantes. Identificar titular/RUC, domicilio/canales, finalidades y plazos de datos, proveedores/transferencias, cobertura y condiciones, emisión SUNAT, tratamiento de reclamos y clasificación sanitaria por componente con asesoría. No se atribuyen registros ni certificaciones.
 
-Próximo paso exacto: terminar validación de métricas y permisos HTTP de archivos, publicar únicamente en la rama indicada, desplegar manualmente el servicio de ensayo, verificar el nuevo registro persistente y el editor por navegador. Actualizar este documento con evidencia real y commit antes de entregar.
+## Último punto confirmado — 26 de octubre de 2026 (Lima)
+
+- Código publicado y desplegado: `b743a865e15f767592e8f7cb958509249146626a`.
+- Despliegue: `dep-dbfqu7gm7kps739hhaf0`, Live. Primer despliegue v0.10: `dep-dbfqsbjrjlhs73ee6vt0`, Live.
+- Los 18 archivos iniciales y los tres ajustes posteriores se compararon con GitHub mediante SHA de blob: coincidencia exacta.
+- Main continúa en `d3ba56bebde80c672246c05fc8fa19a67b7d0415`; PR #2 continúa en borrador, sin fusionar. AutoDeploy permanece desactivado.
+- Verificación real HTTP dentro de Render: PostgreSQL, contraseña administrativa existente, rechazo de contraseña incorrecta, permisos cliente/administrador, bloqueo de registros/ventas, importación Excel controlada y validación de inventario.
+- Módulo editorial: crear, aprobar, publicar y archivar un registro FICTICIO; confirmación anual simulada idempotente; cancelación conserva período y revocación impide acceso; informe de 17 hojas.
+- Tras arrancar otra instancia, `platform.previous_record=true`, `commerce.previous_order=true` y `previous_marker=true`: persistencia comprobada de registros anteriores.
+- Navegador real: inicio de sesión mediante entrada segura del propietario; dashboard y nuevo gestor abrieron; Conoce VitaSafe y Nuestra organización mostraron el texto; Mi suscripción sin sesión exigió acceso.
+- Correcciones finales: bloqueo de fila al editar, cuota de archivos transaccional, fechas ISO en editor, retirada del precio piloto y beneficios no aprobados en portada.
+- Pendiente en navegador: subir/visualizar/descargar imagen, PDF y MP4, manipular membresía ficticia y descargar Excel ampliado. No se declara esta prueba terminada por la mera presencia del formulario.
+- Evidencia visual: `docs/V010_ORGANIZACION.jpg`.
+
+Próximo paso exacto: abrir el gestor del entorno aislado con una sesión administrativa válida; subir fixtures técnicos sin contenido clínico, guardar/revisar/previsualizar, probar descargas y retirar su publicación. Descargar el Excel de 17 hojas, verificar su contenido y actualizar este registro. Continuar los bloqueos v1.0 enumerados arriba sin activar comercio real.
