@@ -43,3 +43,18 @@ test('startup verification preserves manual membership across repeated runs',asy
   for(let n=0;n<2;n++){const result=await verifyPlatform(db,request,ac,cc);assert.equal(result.annual_subscription,true);const manual=(await p.subscriptions(db)).find(s=>s.id===term.subscription_id);assert.equal(manual.access,true);assert.equal(manual.terms.length,1);assert.equal(manual.terms[0].ends,term.ends);}
  }finally{await new Promise(ok=>app.server.close(ok))}
 });
+test('order outbox reaches durable simulation once, without recipient data or duplicate events',async()=>{
+ const c=require('../src/commerce/core');await c.migrate(db);
+ const fixtures=await c.fixtures(db,'DEMO-notification-regression');
+ const order=await c.createOrder(db,{customer:fixtures.customer,items:[{id:fixtures.products[0].id,qty:1}],key:'notification-regression-key'},admin);
+ await c.transition(db,order.id,'cancelled',admin);await c.transition(db,order.id,'cancelled',admin);
+ await assert.rejects(p.prepareOrderJobs(db,customer),{status:403});
+ const results=await Promise.all([p.prepareOrderJobs(db,admin),p.prepareOrderJobs(db,admin)]);
+ assert.equal(results.reduce((a,b)=>a+b,0),4);assert.equal(await p.prepareOrderJobs(db,admin),0);
+ const rows=await db.prepare("SELECT id,payload FROM platform_jobs WHERE id LIKE 'commerce:%'").all();assert.equal(rows.length,4);
+ for(const r of rows){const payload=JSON.parse(r.payload);assert.deepEqual(Object.keys(payload).sort(),['audience','fictional','orderId']);assert.equal(payload.fictional,true);assert.equal(payload.orderId,order.id);}
+ await db.prepare("UPDATE platform_jobs SET state='simulated' WHERE id NOT LIKE 'commerce:%'").run();
+ const delivered=[];await p.processJobs(db,async j=>delivered.push(j.idempotencyKey),Date.now()+1000);await p.processJobs(db,async j=>delivered.push(j.idempotencyKey),Date.now()+1000);
+ assert.equal(delivered.length,4);assert.equal(new Set(delivered).size,4);assert.equal(await p.prepareOrderJobs(db,admin),0);
+ assert.ok((await db.prepare("SELECT state FROM platform_jobs WHERE id LIKE 'commerce:%'").all()).every(r=>r.state==='simulated'));
+});
