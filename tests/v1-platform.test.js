@@ -31,3 +31,15 @@ test('repeated concurrent asset uploads reuse bytes without exposing inventory t
  await assert.rejects(p.asset(db,'application/pdf',bytes,customer),{status:403});
  assert.equal((await db.prepare('SELECT COUNT(*) n FROM platform_audit WHERE action=? AND ref=?').get('asset_upload',results[0].id)).n,1);
 });
+test('startup verification preserves manual membership across repeated runs',async()=>{
+ const {createApp}=require('../server'),{verifyPlatform}=require('../scripts/verify-platform');
+ const app=await createApp({database:db,environment:{DEMO_MODE:'true',VITASAFE_TEST_ENV:'true'}});
+ await new Promise(ok=>app.server.listen(0,'127.0.0.1',ok));const base='http://127.0.0.1:'+app.server.address().port;
+ const session=async u=>{const token=crypto.randomBytes(32).toString('hex');await db.prepare('INSERT INTO sessions(token_hash,user_id,expires) VALUES(?,?,?)').run(crypto.createHash('sha256').update(token).digest('hex'),u.id,Date.now()+60000);return 'vs_session='+token;};
+ const ac=await session(admin),cc=await session(other);
+ const request=(path,method='GET',body=null,cookie='')=>fetch(base+path,{method,headers:{cookie,origin:base,'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+ try{
+  const response=await request('/api/platform/subscription-simulate','POST',{planId:plan.id,amount:1000,transactionId:'DEMO-'+crypto.randomUUID()},ac);assert.equal(response.status,200);const term=await response.json();
+  for(let n=0;n<2;n++){const result=await verifyPlatform(db,request,ac,cc);assert.equal(result.annual_subscription,true);const manual=(await p.subscriptions(db)).find(s=>s.id===term.subscription_id);assert.equal(manual.access,true);assert.equal(manual.terms.length,1);assert.equal(manual.terms[0].ends,term.ends);}
+ }finally{await new Promise(ok=>app.server.close(ok))}
+});
