@@ -4,9 +4,9 @@
 
 - Versión desplegada en pruebas: **0.10.0-preview**, NO v1.0 lista para lanzamiento.
 - Rama: `v06-postgres-excel-onedrive`; PR #2 en borrador, sin fusión.
-- Último código verificado y desplegado: `08ce19f16c91b94a2fe8e9b3ad3014aed5d5e89e`.
-- Último commit confirmado de evidencia: `edbdda954aeb44c6bbccfbd9852e34e534e01785` (Excel de navegador).
-- Despliegue confirmado Live: `dep-dbh160c9v7es73bj3vbg`.
+- Último código verificado y desplegado: `18b96d93a7eac9b2641bed093406c608a2dc96ed`.
+- Último commit confirmado de evidencia: `d1a531481029cf934c97b8dc3c018830136efa20` (capturas de navegador; Excel en edbdda954aeb44c6bbccfbd9852e34e534e01785).
+- Despliegue confirmado Live: `dep-dbhbh29srm7s73fcf5l0`.
 - Servicio permitido: `srv-dbf1pi0473hc73bi5kog`, `vitasafe-v06-pr2-test`.
 - Main y servicio público excluidos. DEMO_MODE=true, autoDeploy=no, sin pagos ni correos reales.
 
@@ -82,49 +82,59 @@ Para Perú: mantener como borradores los datos empresariales, términos, privaci
 
 Próximo paso exacto: abrir el gestor del entorno aislado con una sesión administrativa válida; subir fixtures técnicos sin contenido clínico, guardar/revisar/previsualizar, probar descargas y retirar su publicación. Descargar el Excel de 17 hojas, verificar su contenido y actualizar este registro. Continuar los bloqueos v1.0 enumerados arriba sin activar comercio real.
 
-## Continuación verificada — 28 de octubre de 2026 (Lima)
+## Resultados de navegador y continuidad — 28 de octubre de 2026 (Lima)
 
-Punto de partida remoto: `7f53415237f1be1d19d619d65395fcf953ac9f81`. PR #2 sigue en borrador; main continúa en `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. El servicio aislado tiene autoDeploy=no. No se modifica producción.
+### Pruebas reales completadas
 
-### Navegador: evidencia conservada y comprobaciones nuevas
+- Administrador: entrada segura con contraseña existente, panel y sesión persistente; ninguna contraseña se cambió o expuso.
+- PDF, PNG y MP4 ficticios: subida, previsualización y descarga con bytes idénticos al original. MP4 de dos segundos reproducido hasta finalizar. PDF público descargado sin sesión; imagen pública cargó a 640x360; video Premium negó acceso a visitante anónimo.
+- El inventario privado confirmó exactamente tres archivos técnicos. Reintentar la carga del PDF idéntico devolvió el mismo identificador, sin duplicación. El selector editorial se actualiza inmediatamente al guardar/publicar/archivar.
+- Los tres recursos fueron archivados, revisión 4, sin borrar archivos ni datos. La biblioteca dejó de mostrarlos. No volver a crearlos ni cargarlos para retomar pruebas.
+- Membresía manual: se inspeccionaron seis períodos históricos revocados antes de crear un período anual ficticio nuevo. Siete períodos históricos en total, vencimiento 28/10/2027. Recorrido desde el panel: Vigente → Cancelado con acceso vigente → Suspendido → Vigente → Reembolsado. La última acción revoca únicamente el acceso de ensayo, no constituye una operación bancaria.
+- Cancelar/reanudar no añadió pagos ni períodos. Tras un nuevo despliegue la membresía manual conservó su estado y vencimiento hasta que se revocó expresamente desde el panel.
+- Excel descargado de verdad desde el navegador y leído con ExcelJS: 17 hojas, suscripción manual activa, S/1.00 de ingresos ficticios netos y S/0.00 de cobros reales, antes de la revocación final. Archivo confirmado en GitHub: docs/V010_INFORME_FICTICIO.xlsx (commit edbdda954aeb44c6bbccfbd9852e34e534e01785).
+- La descarga posterior a revocar devolvió una ruta, pero el archivo no estuvo disponible en el entorno de análisis ni en la ruta del navegador. NO se afirma haber validado ese segundo archivo.
 
-- Los tres recursos de la sesión anterior permanecen publicados en el entorno aislado, una instancia de cada uno. No se repitieron las cargas.
-- PDF `694ab9bb-c89b-41ab-b0bd-ab49987cf2ba`, archivo `faa495a0-e6d1-47d8-ae00-3034aaf5278f`: subida, vista previa integrada y descarga administrativa verificadas en la sesión anterior. Hoy, descarga anónima verificada de nuevo: 1450 bytes idénticos al fixture mediante cmp.
-- Imagen `3ec86ba3-bca1-4ab3-ba80-84dc414c662a`, archivo `7f74ac3f-94e0-468b-8f54-731ed2f93a0f`: subida, previsualización y descarga idéntica verificadas anteriormente. Hoy render público sin sesión: complete=true, 640x360.
-- MP4 Premium `d59fc4bb-f4c3-416c-adf8-8542c9eb8ad1`, archivo `d079dd21-1f73-40a7-b211-3baf4e0efe73`: subida, reproducción de dos segundos hasta ended=true y descarga idéntica verificadas con administrador en la sesión anterior. Hoy la página del recurso sin sesión muestra «Requiere una suscripción Premium vigente».
-- Los fixtures contienen solamente texto técnico FICTICIO, sin instrucciones médicas ni datos personales. Quedan publicados temporalmente para finalizar las pruebas; archivar después, sin borrar sus archivos.
-- La sesión administrativa anterior ya no está autenticada. El gestor rechaza el acceso. No se cambia contraseña ni se crea un mecanismo de acceso alternativo.
-- La última acción de membresía fue pulsar una vez «Simular pago anual del cliente ficticio». Su resultado NO quedó confirmado: inspeccionar suscripción y períodos antes de volver a simular para evitar una renovación involuntaria.
-- Pendientes de navegador autenticado: cancelación/suspensión/reanudación/revocación anual, descarga y revisión del Excel de 17 hojas. La prueba local de 17 hojas no sustituye esa descarga.
-- Permisos probados en navegador: administrador en la sesión anterior y visitante anónimo hoy. Acceso positivo de un cliente Premium distinto sigue pendiente. El cliente creado por el simulador no tiene una contraseña conocida; no se falsifican sus cookies ni se evita la autenticación.
-- Captura nueva: docs/V010_PREMIUM_ANONIMO.jpg. La captura anterior del PDF no se conservó en el directorio; no se adjunta un archivo inexistente.
+### Identificadores para evitar duplicados
 
-### Correcciones incrementales
+| Recurso | ID del recurso | ID del archivo | Estado final |
+|---|---|---|---|
+| PDF técnico | 694ab9bb-c89b-41ab-b0bd-ab49987cf2ba | faa495a0-e6d1-47d8-ae00-3034aaf5278f | Archivado |
+| Imagen técnica | 3ec86ba3-bca1-4ab3-ba80-84dc414c662a | 7f74ac3f-94e0-468b-8f54-731ed2f93a0f | Archivado |
+| MP4 Premium técnico | d59fc4bb-f4c3-416c-adf8-8542c9eb8ad1 | d079dd21-1f73-40a7-b211-3baf4e0efe73 | Archivado |
 
-- Cargas idénticas (MIME + SHA-256) reutilizan el identificador existente bajo el bloqueo transaccional de cuota. No borran archivos ni cambian permisos/revisión de los recursos. La reutilización se registra separadamente en auditoría.
-- Inventario de metadatos solo para administrador, sin bytes, para encontrar archivos guardados antes de una interrupción y reutilizarlos.
-- Selector de registros se actualiza después de guardar/publicar, conservando la selección. Antes podía obligar a recargar para encontrar un registro nuevo.
-- 48 pruebas locales aprobadas, cero fallos, incluida concurrencia de cuatro cargas idénticas, una sola inserción, inventario sin contenido y denegación a clientes. Base local PGlite; no se presenta como validación remota de este cambio.
+Membresía manual: 9d1021af-a16c-43ac-8339-307d4c11ffa3, cliente ficticio DEMO-SUB-5c46ce376d84468a. No repetir el pago para recuperar estado. Las ejecuciones automáticas posteriores usan planes separados y archivados.
 
-Próximo paso exacto: recuperar sesión administrativa mediante formulario seguro; abrir Contenidos y suscripciones; consultar los períodos existentes antes de simular de nuevo; finalizar operaciones de membresía y descargar el XLSX de 17 hojas. Verificar los ajustes nuevos en Render antes de declararlos operativos. Mantener DEMO_MODE=true, autoDeploy=no y PR en borrador. Las limitaciones v1.0 anteriores siguen vigentes.
+### Defectos corregidos
 
-### Recuperación de acceso y cierre de pruebas del panel (misma sesión)
+1. Cargas repetidas: reutilización por MIME/SHA-256 bajo bloqueo transaccional; auditoría independiente de reutilización, sin alterar aprobación editorial ni permisos.
+2. Selector de registros: mantiene la selección y refleja cambios sin obligar a recargar.
+3. Prueba de arranque: antes reutilizaba el plan manual y revocaba sus períodos al terminar. Ahora cada ejecución crea y archiva su propio plan. Dos ejecuciones consecutivas preservan una membresía manual en la prueba HTTP local; corroborado después de desplegar en Render.
+4. Avisos de pedidos: el registro transaccional commerce_outbox se conecta con platform_jobs usando identificadores estables. No duplica avisos al reintentar; el trabajo conserva solo ID de pedido, audiencia y marca ficticia, sin nombres/correos/direcciones. El botón prepara hasta 100 y procesa hasta 10 por operación con transporte simulado. No hay envío externo ni automatización de correo activada.
+5. Panel de avisos: totales globales por estado separados del listado limitado a los 100 más recientes, para no confundir avisos antiguos procesados con los nuevos pendientes.
 
-La autenticación segura terminó correctamente y el panel abrió con la contraseña existente, sin revelarla ni modificarla. Se inspeccionó la membresía anterior antes de actuar: seis períodos revocados. Se creó un nuevo período ficticio, siete períodos históricos en total, vencimiento 28/10/2027. Se verificaron desde la interfaz: Vigente → Cancelado con acceso vigente → Suspendido → Vigente. Cancelar y reanudar conservaron vencimiento y número de períodos.
+### Pruebas automatizadas e integración
 
-Descarga real de navegador `docs/V010_INFORME_FICTICIO.xlsx`: 17 hojas leídas con ExcelJS; suscripción 9d1021af-a16c-43ac-8339-307d4c11ffa3 activa, siete transacciones históricas, ingresos netos ficticios S/1.00 y cobros reales S/0.00. No es el libro de presentación con gráficos pendiente de revisión visual; es el informe operativo generado por PostgreSQL. Captura docs/V010_MEMBRESIA.jpg.
+50 pruebas locales aprobadas, cero fallos. Las 50 también pasaron en el build del despliegue de notificaciones 18b96d93a7eac9b2641bed093406c608a2dc96ed, dep-dbhbh29srm7s73fcf5l0 Live. Esta compilación informó 0 vulnerabilidades en npm ci; no se cambiaron dependencias.
 
-Defecto encontrado: scripts/verify-platform.js reutilizaba el plan del ensayo manual y al concluir el arranque revocaba todos sus períodos. Corrección: cada ejecución crea su propio plan ficticio y lo archiva al terminar. Los planes archivados se excluyen de la selección manual. Prueba HTTP local nueva ejecuta dos verificaciones seguidas y comprueba que la membresía manual conserva acceso, período y fecha. Suite final: 49 pruebas aprobadas, cero fallos. Aún debe corroborarse el cambio tras despliegue real.
+Runtime real en Render: PostgreSQL, autenticación y roles, registro/ventas bloqueados, importación controlada de inventario, checkout ficticio HTTP, cuatro reintentos concurrentes, pago simulado, estados, reembolso y recepción física, stock conservado, checksum de respaldo, editorial, anualidad, permisos, reporte de 17 hojas y avisos simulados. previous_record/previous_order/previous_marker=true.
 
-## Último punto verificado de continuidad
+Las pruebas locales utilizan PGlite. Un transporte simulado NO prueba la entrega de correo. Un checksum local NO prueba respaldo externo ni restauración remota. Los ensayos no acreditan disponibilidad de una pasarela real.
 
-- Despliegue `dep-dbh160c9v7es73bj3vbg` Live, código `08ce19f16c91b94a2fe8e9b3ad3014aed5d5e89e`. 49 pruebas aprobadas también durante la compilación Render; npm ci informó 0 vulnerabilidades.
-- Verificación real de arranque sobre PostgreSQL: editorial, permisos, anualidad, confirmación duplicada, cancelación, revocación, informe de 17 hojas, compra ficticia HTTP, cuatro reintentos concurrentes, pago simulado, entrega, reembolso y retorno físico, conservación de stock y checksum de copia. previous_record/previous_order/previous_marker=true.
-- Navegador tras desplegar: sesión administrativa conservada; membresía manual 9d1021af-a16c-43ac-8339-307d4c11ffa3 todavía Vigente, siete períodos, fin 28/10/2027. La suscripción automática es independiente y está revocada. Corrección de aislamiento verificada en el entorno real.
-- Inventario administrativo muestra exactamente los tres archivos técnicos PNG/PDF/MP4. Al volver a seleccionar el PDF idéntico el servidor devuelve «Archivo existente reutilizado: faa495a0-e6d1-47d8-ae00-3034aaf5278f». No se creó un duplicado.
-- PDF e imagen fueron archivados desde el editor, revisión 4. Selector de registros actualizado inmediatamente sin recargar: corrección visual verificada. Sus archivos se conservan. MP4 pendiente de archivar al retomar.
-- Informe descargado de 17 hojas guardado en GitHub: `docs/V010_INFORME_FICTICIO.xlsx`, commit `edbdda954aeb44c6bbccfbd9852e34e534e01785`. Contiene datos ficticios anteriores a la revocación final.
-- Pendientes reales de navegador: revocación final de membresía manual, acceso positivo con una cuenta cliente Premium legítima distinta, descarga directa privada con esa cuenta y pruebas móviles. No se equiparan pruebas de HTTP/local con una sesión cliente real.
-- No se activaron correos, pagos, registros ni ventas reales. No hay nuevas contrataciones. Main no fue modificado; PR #2 sigue en borrador.
+### Pendientes prioritarios
 
-Próximo paso exacto: abrir el gestor autenticado; archivar únicamente el recurso MP4 d59fc4bb-f4c3-416c-adf8-8542c9eb8ad1; inspeccionar la membresía manual antes de revocarla con motivo ficticio. Guardar resultados, continuar la integración de catálogo/checkout de ensayo y la revisión de permisos. Nunca volver a subir los tres fixtures ni repetir pagos para recuperar estado.
+- Acceso positivo en navegador de un cliente Premium distinto con credenciales legítimas y prueba de sus archivos privados. Se verificó administrador y visitante sin sesión, no se falsificaron sesiones de cliente.
+- Segundo Excel posterior a revocar: repetir descarga y analizarlo cuando la entrega de archivos del navegador funcione.
+- Catálogo definitivo: siete propuestas privadas aún no integradas con la tienda heredada; fotos, precios, contenido y stock reales pendientes del propietario. No reemplazar datos existentes con ejemplos.
+- Checkout invitado/cliente integrado, recuperación de cuenta, componentes/lotes/vencimientos, delivery y notificaciones de esos flujos.
+- Móvil/emulador, revisión WCAG completa y seguridad/concurrencia de los módulos futuros.
+- Pasarela con credenciales sandbox, Microsoft OAuth autorizado, proveedor de correo, almacenamiento privado definitivo/antimalware y copia externa cifrada con restauración PostgreSQL remota.
+- Infraestructura permanente antes del vencimiento previsto de la base Free (24/11/2026). No se contrataron planes.
+
+### Próximo paso exacto
+
+Totales de avisos comprobados en navegador: pendientes 194 → 184; simulados sin envío 50 → 60. Total 244 conservado, lote de diez sin nuevos duplicados ni envío real. Evidencia: docs/V010_AVISOS.jpg. Runtime confirmado 29/10/2026 03:09 UTC: PostgreSQL, DEMO_MODE=true, previous_record/previous_order/previous_marker=true y order_notifications_simulated=true.
+
+Continuar la integración del catálogo del editor con la tienda de ensayo, mediante una proyección de campos públicos que excluya costos y sin activar pedidos públicos. Para probar Premium cliente se necesita una cuenta ficticia con inicio de sesión legítimo; no cambiar la contraseña administrativa ni añadir bypass.
+
+PR #2 continúa en borrador. Main debe seguir en d3ba56bebde80c672246c05fc8fa19a67b7d0415. DEMO_MODE=true, autoDeploy=no. V1.0 comercial NO alcanzada.
