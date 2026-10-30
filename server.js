@@ -327,13 +327,14 @@ async function api(req, res, u) {
   if (p === '/api/config' && m === 'GET') return json(res, 200, {
     settings: publicSettings(s),
     demo_mode: DEMO_MODE,
+    catalogue_editor: DEMO_MODE && environment.VITASAFE_TEST_ENV==='true',
     admin: isAdmin,
     ready_issues: isAdmin ? await ensureReady(s) : undefined
   });
   if (p === '/api/products' && m === 'GET') {
     if (priv && !isAdmin && !DEMO_MODE) fail(403, 'Tienda privada');
     return json(res, 200, {
-      products: await db.prepare(isAdmin ? 'SELECT * FROM products ORDER BY rowid' : 'SELECT * FROM products WHERE active=1 ORDER BY rowid').all()
+      products: isAdmin && environment.VITASAFE_TEST_ENV==='true' ? await require('./src/catalogue').list(db) : await db.prepare(isAdmin ? 'SELECT * FROM products ORDER BY rowid' : 'SELECT id,name,slug,description,category,price,stock,image,contents,active FROM products WHERE active=1 ORDER BY rowid').all()
     });
   }
   if (p === '/api/order' && m === 'POST') {
