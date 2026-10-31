@@ -1,3 +1,22 @@
+# Continuidad prioritaria — 31/10/2026
+
+Esta sección sustituye los puntos de continuidad históricos inferiores. Versión 0.10.0-preview; NO lista para ventas.
+
+- Código desplegado: `9004f45e7f90dd07096203994b59fcdd23ab57ec`; Render `dep-dbj169jbc2fs73bicrs0` Live confirmado. 55 pruebas locales y 55 de build aprobadas, cero fallos.
+- Rama `v06-postgres-excel-onedrive`, PR #2 borrador. Main sigue `d3ba56bebde80c672246c05fc8fa19a67b7d0415`; autoDeploy=no confirmado. No se modificó el servicio comercial.
+- Implementada conexión del carrito existente al motor de pedidos mediante endpoint administrativo exclusivo de DEMO_MODE=true y VITASAFE_TEST_ENV=true. Precio y stock se validan en servidor; reservas, devoluciones y ajustes se sincronizan transaccionalmente con catálogo y auditoría. Checkout público permanece bloqueado.
+- Prueba local HTTP integral: cuatro reintentos concurrentes sin duplicación, precio del servidor, rechazo de edición obsoleta, pago simulado, preparación/envío/entrega, reembolso sin restock y recepción física idempotente; 17 hojas y respaldo cifrado/restauración en PGlite vacío. No equivale a restauración remota.
+- Navegador anterior creó UN pedido: `DEMO-fee7fdca-c961-496e-832e-85af8e3655d2`, una unidad S/12.34 del producto existente `DEMO-BROWSER-CATALOGUE-20261030`. Confirmación visible: pendiente de pago simulado e inventario reservado. No se comprobó pago ni estados posteriores. NO duplicar pedido ni producto.
+- El producto se republicó para ese ensayo y aún debe despublicarse al cerrar el recorrido. Stock anterior 2; la reserva y liberación posteriores deben comprobarse. Pasaron más de 15 minutos: revisar vencimiento antes de intentar pago; no eludir esa validación.
+- La sesión anterior quedó bloqueada por límite de uso del navegador al abrir seguimiento. Al retomar el navegador funciona, pero el servicio muestra Application loading; la prueba real sigue pendiente.
+- CLI de restauración segura guardado en `5ebfa9d6deafc7e9418ac2a396803f2ef1471625`, posterior al código desplegado. Documentación de copia cifrada confirmada en `b0f9a364e28336acdd9513bd0eade45076beffdf`: `docs/RESPALDO_CIFRADO_Y_RESTAURACION.md`. Rechaza destino igual al origen y destino con datos. Copia externa y restauración PostgreSQL remota NO realizadas.
+- Excel posterior a revocación continúa sin archivo utilizable en el entorno de análisis; no repetir membresías ni pagos. Cliente Premium positivo en navegador, componentes/lotes/vencimientos, delivery configurable, recuperación de cuenta, configuración comercial y pruebas móviles integrales siguen pendientes.
+- Intervención futura del propietario: destino privado de respaldos y custodia de clave; infraestructura permanente antes del vencimiento previsto 24/11/2026; datos comerciales/legales y credenciales sandbox/OAuth/correo. No solicitar secretos por chat ni activar integraciones reales.
+
+**Próximo paso exacto:** cuando termine el arranque, abrir ensayo con autenticación legítima, localizar el pedido indicado, comprobar/liberar reserva vencida de forma normal y stock del producto, dejarlo despublicado. No crear otro pedido para ocultar el resultado pendiente. Continuar pruebas e integraciones conservando DEMO_MODE=true.
+
+---
+
 # Progreso VitaSafe
 
 ## Punto de continuidad
