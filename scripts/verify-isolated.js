@@ -60,7 +60,10 @@ async function verifyIsolated(db,env){
    assert.equal((await upload('inventory',[{product_id:'campus',stock:999,reason:'FICTICIO fuera del alcance'}])).status,400);
    assert.equal((await upload('reports',[{metric:'DEMO-prueba',value:1}])).status,200);
   }
-  const catalogue=await (await request('/api/products')).json();assert.equal(catalogue.products.length,6);
+  const catalogueResponse=await request('/api/products');assert.equal(catalogueResponse.status,200);
+  const catalogue=await catalogueResponse.json(),published=await db.prepare('SELECT id FROM products WHERE active=1 ORDER BY id').all();
+  assert.deepEqual(catalogue.products.map(p=>p.id).sort(),published.map(p=>p.id));
+  for(const product of catalogue.products)assert.equal(Object.hasOwn(product,'cost'),false);
   const marker=await db.prepare('SELECT v FROM sync_state WHERE k=?').get('isolated_persistence_marker');
   if(!marker)await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?)').run('isolated_persistence_marker',crypto.randomUUID());
   const driveStatus=await (await request('/api/admin/onedrive/status','GET',null,adminCookie)).json();
