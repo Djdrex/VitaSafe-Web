@@ -13,6 +13,7 @@ async function handle(req,res,url,{db,user,environment:env,body,json,fail}){
  if(action==='report'&&req.method==='GET'){res.writeHead(200,{'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Content-Disposition':'attachment; filename="VitaSafe_Informe_FICTICIO.xlsx"','Cache-Control':'no-store'});res.end(await reports.workbook(db));return true;}
  if(req.method!=='POST')fail(405,'Método no permitido');const b=await body(req);
  if(action==='prepare'){json(res,200,await core.fixtures(db,namespace));return true;}
+ if(action==='catalogue-checkout'){if(b.confirm_fictional!==true)fail(400,'Confirma que es un ensayo sin compra ni envío');await db.prepare('INSERT OR IGNORE INTO commerce_customers(id,name,email,address,fictional) VALUES(?,?,?,?,1)').run(customer,'CLIENTE FICTICIO',namespace.toLowerCase()+'@example.invalid','Dirección ficticia sin entrega');json(res,201,await core.createOrder(db,{customer,items:b.items,key:b.key,catalogue:true},actor));return true;}
  if(action==='checkout'){if(!Array.isArray(b.items)||b.items.some(i=>!String(i.id).startsWith(namespace+'-')))fail(400,'Solo productos del ensayo propio');json(res,201,await core.createOrder(db,{customer,items:b.items,key:b.key},actor));return true;}
  if(['payment','transition','return'].includes(action)){
  const order=await core.readOrder(db,b.orderId,{id:customer,role:'customer'});
