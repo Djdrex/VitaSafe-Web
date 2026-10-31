@@ -4,9 +4,9 @@
 
 - Versión desplegada en pruebas: **0.10.0-preview**, NO v1.0 lista para lanzamiento.
 - Rama: `v06-postgres-excel-onedrive`; PR #2 en borrador, sin fusión.
-- Último código verificado y desplegado: `01ca17e31f46f115e67d0e4308b494387b449ab1`.
-- Último commit confirmado de evidencia: `d1a531481029cf934c97b8dc3c018830136efa20` (capturas de navegador; Excel en edbdda954aeb44c6bbccfbd9852e34e534e01785).
-- Despliegue confirmado Live: `dep-dbi0fhdg1s2s73djtba0`.
+- Último código verificado y desplegado: `c28becd665777946d9ee5298e225d367c7d9b7c8`.
+- Último commit confirmado de evidencia: `65029696b25bcde00215c256fb7f0d9cad0ec3c7` (capturas de navegador; Excel en edbdda954aeb44c6bbccfbd9852e34e534e01785).
+- Despliegue confirmado Live: `dep-dbin7rou01pc73ddud40`.
 - Servicio permitido: `srv-dbf1pi0473hc73bi5kog`, `vitasafe-v06-pr2-test`.
 - Main y servicio público excluidos. DEMO_MODE=true, autoDeploy=no, sin pagos ni correos reales.
 
@@ -142,7 +142,7 @@ PR #2 continúa en borrador. Main debe seguir en d3ba56bebde80c672246c05fc8fa19a
 
 ## Continuidad confirmada — 30 de octubre de 2026 (Lima)
 
-Código desplegado: 01ca17e31f46f115e67d0e4308b494387b449ab1. Render Live confirmado de nuevo al retomar. PR #2 borrador; main sigue en d3ba56bebde80c672246c05fc8fa19a67b7d0415.
+Código al retomar: 01ca17e31f46f115e67d0e4308b494387b449ab1. Render Live confirmado al retomar. PR #2 borrador; main sigue en d3ba56bebde80c672246c05fc8fa19a67b7d0415.
 
 ### Terminado y verificado
 
@@ -172,3 +172,38 @@ Código desplegado: 01ca17e31f46f115e67d0e4308b494387b449ab1. Render Live confir
 ### Próximo paso exacto
 
 Abrir SOLO vitasafe-v06-pr2-test con sesión administrativa válida. En Productos, crear un registro inequívocamente FICTICIO, comprobar imagen/precio/costo privado/stock, recorrer carrito y despublicarlo; registrar su ID para evitar duplicados. No modificar los productos existentes ni el fixture automático DEMO-CATALOGUE-VERIFY. Luego continuar los pendientes de integración. No declarar v1.0 terminada ni solicitar lanzamiento mientras falten verificaciones críticas.
+
+
+## Prueba real de catálogo completada — 30 de octubre de 2026 (Lima)
+
+Autenticación administrativa realizada de nuevo mediante entrada segura de credenciales existentes. Panel abierto correctamente; contraseña no cambiada ni revelada.
+
+- Producto manual único: `DEMO-BROWSER-CATALOGUE-20261030`, nombre `FICTICIO · Prueba catálogo 30 octubre`. No volver a crearlo.
+- Creado desde Productos con PNG ficticio, categoría Universitario, precio de ensayo S/12.34, costo privado S/4.32 y stock 2. Al reabrir el editor, se conservaron precio, costo, stock e imagen. No son datos comerciales definitivos.
+- Visible en catálogo con imagen y precio. Carrito: una unidad S/12.34; dos unidades S/24.68; tercer incremento rechazado por límite de stock.
+- Formulario de checkout invitado abrió. No se envió pedido ni se verificó en esta prueba una compra completa; el bloqueo de ventas sigue validado por pruebas HTTP anteriores.
+- Despublicado desde el panel, sin eliminarlo: fila permanece con Visible=No y stock 2. Desapareció del catálogo y la bolsa se normalizó automáticamente a cero.
+- Evidencia: `docs/V010_CATALOGO_VERIFICADO.jpg`.
+- Defecto de accesibilidad observado: descripción, contenido, mantenimiento, reposición e información adicional no tenían asociación label/control; categoría e imagen tampoco. Se corrigieron las asociaciones HTML en public/app.js, sin cambiar lógica de autenticación o comercio.
+
+Los pendientes de producto manual y subtotal de la sección anterior quedan resueltos por esta evidencia. Permanecen pendientes checkout integral, cliente Premium positivo, Excel posterior a revocación, componentes/lotes/delivery, configuración ampliada y respaldos/restauración externa. La sesión no acredita pruebas físicas en móviles ni lanzamiento comercial.
+
+Siguiente paso: verificar las etiquetas accesibles después del despliegue de la corrección; continuar con descarga Excel posterior a revocación y recorridos de cliente legítimo. Conservar este producto despublicado y los recursos archivados. Main, PR borrador y DEMO_MODE=true se mantienen.
+
+
+Corrección de accesibilidad: commit `c28becd665777946d9ee5298e225d367c7d9b7c8`. Suite repetida tras el cambio: 54/54 local y 54/54 durante compilación Render, cero fallos. Despliegue aislado `dep-dbin7rou01pc73ddud40` iniciado manualmente con autoDeploy=no.
+
+Excel posterior a revocación: se hizo UN intento desde el enlace Exportar informe de ensayo y suscripciones. El navegador notificó descarga completada, pero el archivo indicado no existía ni en el directorio compartido ni en el entorno del navegador tras esperar cinco segundos. No se afirma verificación de contenido, no se repitieron descargas ni se modificaron membresías.
+
+
+### Último estado verificado de esta sesión
+
+Código desplegado `c28becd665777946d9ee5298e225d367c7d9b7c8`, despliegue `dep-dbin7rou01pc73ddud40` Live (31/10/2026 04:53 UTC; 30/10/2026 Lima). 54 pruebas locales y 54 en Render, cero fallos. El blob remoto de public/app.js coincide exactamente con el archivo probado: `5fdb931e10e2371ee1738541ca589f9102dd91ad`.
+
+Runtime sobre PostgreSQL confirmó catálogo/costo privado/FAQ, roles, membresía anual, idempotencia, cancelación y reembolso, 17 hojas, cuatro reintentos concurrentes, inventario conservado, registros anteriores presentes y DEMO_MODE=true. OneDrive sigue sin configurar ni conectar.
+
+Después del reinicio: sesión administrativa conservada; producto manual sigue despublicado, con precio S/12.34, costo S/4.32 y stock 2. El editor conserva imagen. Navegador identifica por nombre Descripción, Contenido del kit, Categoría del kit, Mantenimiento, Reposición, Información adicional e Imagen del producto. Corrección de accesibilidad verificada en el despliegue, no solo en código. No equivale a auditoría WCAG completa.
+
+Capturas de catálogo y FAQ guardadas en commit `65029696b25bcde00215c256fb7f0d9cad0ec3c7`. PR #2 permanece borrador; main permanece d3ba56bebde80c672246c05fc8fa19a67b7d0415. AutoDeploy sigue desactivado. Ninguna modificación al servicio comercial.
+
+**Próximo paso exacto actualizado:** no repetir creación del producto ni las pruebas ya completadas. Auditar la conexión entre carrito/checkout heredado y motor commerce de ensayo antes de modificarla; completar una compra ficticia integrada sin abrir el endpoint público de pedidos. Mantener pendiente la prueba positiva de cliente Premium con cuenta ficticia legítima y la entrega utilizable del Excel posterior a revocación. No activar pagos/correos, no fusionar PR ni declarar v1.0 lista.
