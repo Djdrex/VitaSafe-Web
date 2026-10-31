@@ -1,0 +1,3 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');const Excel=require('exceljs');
+test('patched uuid remains compatible with ExcelJS extended conditional formatting',async()=>{const book=new Excel.Workbook(),sheet=book.addWorksheet('test');sheet.addRow(['stock']);sheet.addRow([1]);sheet.addRow([5]);sheet.addConditionalFormatting({ref:'A2:A3',rules:[{type:'iconSet',iconSet:'3Stars',priority:1,cfvo:[{type:'percent',value:0},{type:'percent',value:33},{type:'percent',value:67}]}]});const bytes=await book.xlsx.writeBuffer();const restored=new Excel.Workbook();await restored.xlsx.load(bytes);assert.equal(restored.getWorksheet('test').getCell('A3').value,5);assert.equal(restored.getWorksheet('test').conditionalFormattings.length,1)});
