@@ -4,9 +4,9 @@
 
 - Versión desplegada en pruebas: **0.10.0-preview**, NO v1.0 lista para lanzamiento.
 - Rama: `v06-postgres-excel-onedrive`; PR #2 en borrador, sin fusión.
-- Último código verificado y desplegado: `18b96d93a7eac9b2641bed093406c608a2dc96ed`.
+- Último código verificado y desplegado: `01ca17e31f46f115e67d0e4308b494387b449ab1`.
 - Último commit confirmado de evidencia: `d1a531481029cf934c97b8dc3c018830136efa20` (capturas de navegador; Excel en edbdda954aeb44c6bbccfbd9852e34e534e01785).
-- Despliegue confirmado Live: `dep-dbhbh29srm7s73fcf5l0`.
+- Despliegue confirmado Live: `dep-dbi0fhdg1s2s73djtba0`.
 - Servicio permitido: `srv-dbf1pi0473hc73bi5kog`, `vitasafe-v06-pr2-test`.
 - Main y servicio público excluidos. DEMO_MODE=true, autoDeploy=no, sin pagos ni correos reales.
 
@@ -138,3 +138,37 @@ Totales de avisos comprobados en navegador: pendientes 194 → 184; simulados si
 Continuar la integración del catálogo del editor con la tienda de ensayo, mediante una proyección de campos públicos que excluya costos y sin activar pedidos públicos. Para probar Premium cliente se necesita una cuenta ficticia con inicio de sesión legítimo; no cambiar la contraseña administrativa ni añadir bypass.
 
 PR #2 continúa en borrador. Main debe seguir en d3ba56bebde80c672246c05fc8fa19a67b7d0415. DEMO_MODE=true, autoDeploy=no. V1.0 comercial NO alcanzada.
+
+
+## Continuidad confirmada — 30 de octubre de 2026 (Lima)
+
+Código desplegado: 01ca17e31f46f115e67d0e4308b494387b449ab1. Render Live confirmado de nuevo al retomar. PR #2 borrador; main sigue en d3ba56bebde80c672246c05fc8fa19a67b7d0415.
+
+### Terminado y verificado
+
+- Integración del editor comercial existente con PostgreSQL en el entorno aislado. Nombre, descripción, categoría, imagen PNG/JPG/WebP, precio, contenido, stock, publicación y metadatos privados. Costo interno no aparece en la respuesta pública. Siete categorías disponibles sin inventar precios ni reemplazar productos.
+- Guardado transaccional, revisión optimista para rechazar ediciones simultáneas, ajustes de stock en inventory_events y auditoría con actor. Despublicar conserva el registro.
+- FAQ integrada en el gestor editorial existente: pregunta/respuesta, categoría, orden, borrador, publicación y archivo. Vista pública con respuestas desplegables, texto escapado y enlace en el pie de página.
+- Carrito existente: excluye productos despublicados/sin precio/sin stock, limita cantidades a stock y recupera almacenamiento local inválido.
+- 54 pruebas locales y 54 en cada build Render, cero fallos. Runtime sobre PostgreSQL confirmó catalogue_editor, catalogue_cost_private y faq_lifecycle, además de las verificaciones anteriores y 17 hojas Excel.
+- Navegador: FAQ creada, publicada, expandida y archivada. ID 533d091e-f32f-4496-8672-ae13a413bd8f, versión final 3. No volver a crearla. Evidencia local docs/V010_FAQ_VERIFICADA.jpg.
+- Navegador detectó Nuevo producto deshabilitado por la regla visual antigua. Corregido en 01ca17e; después se verificó que el botón abre el formulario con precio, costo privado, stock e imagen.
+
+### Pendiente técnico que todavía puede resolverse
+
+- Completar desde navegador guardar un producto ficticio con imagen, editarlo, verlo en catálogo/carrito y despublicarlo. El formulario se abrió, pero la sesión se interrumpió ANTES de rellenarlo o guardar; no se creó un producto manual en esa prueba.
+- Comprobar subtotal y cantidades desde navegador, sin aceptar pedidos reales. El checkout público permanece bloqueado. El motor de compra ficticia está verificado por HTTP, pero su conexión integral con el carrito público no está terminada.
+- Integrar componentes, lotes, vencimientos y delivery operativo. Existen módulos previos; auditar antes de extenderlos.
+- Completar configuración comercial desde panel, métodos de pago/plantillas seguros, recuperación de cuenta, cliente Premium legítimo y pruebas móviles/accesibilidad.
+- Validar descarga del Excel posterior a revocación. La exportación de 17 hojas funciona en integración; la transferencia del segundo archivo desde el navegador no quedó disponible en las sesiones previas.
+- Catálogo ampliado y FAQ siguen limitados por VITASAFE_TEST_ENV=true y DEMO_MODE=true. Todavía requiere revisión de habilitación para producción; no basta desactivar DEMO_MODE.
+
+### Pendiente que requiere intervención del propietario
+
+- Datos, fotografías, precios, costos y condiciones comerciales definitivos; datos legales y revisión profesional.
+- Credenciales sandbox del proveedor de pago elegido, Microsoft OAuth, proveedor de correo; no se activaron integraciones reales.
+- Destino externo de copias cifradas, presupuesto e infraestructura permanente; restauración remota pendiente. Atender vencimiento previsto de PostgreSQL Free 24/11/2026.
+
+### Próximo paso exacto
+
+Abrir SOLO vitasafe-v06-pr2-test con sesión administrativa válida. En Productos, crear un registro inequívocamente FICTICIO, comprobar imagen/precio/costo privado/stock, recorrer carrito y despublicarlo; registrar su ID para evitar duplicados. No modificar los productos existentes ni el fixture automático DEMO-CATALOGUE-VERIFY. Luego continuar los pendientes de integración. No declarar v1.0 terminada ni solicitar lanzamiento mientras falten verificaciones críticas.
