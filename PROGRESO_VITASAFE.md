@@ -1,3 +1,27 @@
+# Estado verificado — 4 de noviembre de 2026 (Lima)
+
+Esta sección prevalece sobre los registros históricos siguientes.
+
+- Código desplegado: `b268c2e2b2e7077f22d55c82d8d026808a6f4fd9`. Despliegue `dep-dbluv3u1egvs73ap7hs0` Live, 04/11/2026 21:54 Lima. Versión 0.10.0-preview; NO lista para ventas.
+- Se recuperó el arranque del entorno aislado. El verificador exigía seis productos y fallaba al conservar el producto ficticio publicado. La comparación nueva valida todos los IDs publicados; usa el mismo orden JavaScript en ambas listas para evitar diferencias de colación PostgreSQL/PGlite. No se alteraron productos para hacer pasar la prueba.
+- Regresión guardada en `7321129c695f7eb124278163a1a8e6b254c0929c`: reapertura de base con producto adicional publicado, stock conservado y marcador persistente. Suite local final 55/55, cero fallos; builds Render anteriores de esta sesión también 55/55. No se incrementó artificialmente el conteo por ampliar un caso existente.
+- Diagnóstico seguro por etapas y ubicación de código en `f479a142ebc869bfccc6d3f631a00c01104627fb`. No imprime errores completos, credenciales ni datos privados. Los despliegues 7321129 y f479a14 fallaron al arrancar; NO tratarlos como versiones verificadas.
+- Runtime real de b268c2e: PostgreSQL; autenticación con variable existente; contraseña incorrecta rechazada; roles; registro y ventas bloqueados; cuatro plantillas Excel e importación controlada; catálogo público sin costo privado; concurrencia; pago simulado, estados, reembolso y retorno físico; inventario conservado; anualidad y revocación; informe 17 hojas; previous_record/previous_order/previous_marker=true. OneDrive sin configurar/conectar.
+- Navegador: laboratorio y tienda vuelven a cargar; barra DEMOSTRACIÓN visible y producto manual conservado. La sesión administrativa anterior expiró. Falta autenticación legítima para inspeccionar el pedido manual; no se extrajeron credenciales ni se falsificó sesión.
+- Pedido manual pendiente sin duplicar: `DEMO-fee7fdca-c961-496e-832e-85af8e3655d2`. Producto `DEMO-BROWSER-CATALOGUE-20261030`, todavía publicado. No se efectuó pago manual ni cancelación en esta reanudación. Su reserva de 15 minutos ya venció; inspeccionar y cancelar/liberar por el flujo normal, comprobar stock y despublicar. No generar un pedido sustituto sin documentar el cierre del anterior.
+- PR #2 borrador y main `d3ba56bebde80c672246c05fc8fa19a67b7d0415`; autoDeploy=no confirmado. Servicio público no modificado. DEMO_MODE=true, sin pagos/correos reales ni contrataciones.
+
+## Pendientes y próximo paso
+
+1. Completar acceso administrativo mediante formulario seguro del navegador; no pedir contraseña por chat ni cambiarla. Revisar el pedido anterior, cerrar reserva vencida y comprobar stock/despublicación.
+2. Compra integral desde navegador y cliente Premium positivo siguen pendientes; las pruebas HTTP del motor no sustituyen esos recorridos.
+3. Excel posterior a revocación: falta archivo descargado utilizable; conservar membresía manual revocada, sin nuevos pagos.
+4. Componentes, lotes, vencimientos y delivery integrado; configuración comercial y recuperación de cuenta; móvil/accesibilidad completa: pendientes técnicos, no declarados terminados.
+5. Respaldo cifrado y restauración local PGlite probados. Falta destino externo privado autorizado, clave custodiada y restauración PostgreSQL remota. Procedimiento en docs/RESPALDO_CIFRADO_Y_RESTAURACION.md. No contratar ni abrir acceso público a la base. Planificar continuidad antes del vencimiento previsto informado 24/11/2026.
+6. Decisiones del propietario: infraestructura/presupuesto; datos comerciales y legales; pasarela y credenciales sandbox; Microsoft OAuth y correo. Integraciones reales apagadas.
+
+---
+
 # Continuidad prioritaria — 31/10/2026
 
 Esta sección sustituye los puntos de continuidad históricos inferiores. Versión 0.10.0-preview; NO lista para ventas.
@@ -226,3 +250,4 @@ Después del reinicio: sesión administrativa conservada; producto manual sigue 
 Capturas de catálogo y FAQ guardadas en commit `65029696b25bcde00215c256fb7f0d9cad0ec3c7`. PR #2 permanece borrador; main permanece d3ba56bebde80c672246c05fc8fa19a67b7d0415. AutoDeploy sigue desactivado. Ninguna modificación al servicio comercial.
 
 **Próximo paso exacto actualizado:** no repetir creación del producto ni las pruebas ya completadas. Auditar la conexión entre carrito/checkout heredado y motor commerce de ensayo antes de modificarla; completar una compra ficticia integrada sin abrir el endpoint público de pedidos. Mantener pendiente la prueba positiva de cliente Premium con cuenta ficticia legítima y la entrega utilizable del Excel posterior a revocación. No activar pagos/correos, no fusionar PR ni declarar v1.0 lista.
+
