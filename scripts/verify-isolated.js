@@ -70,7 +70,7 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   onStage('published_catalogue');
   const catalogueResponse=await request('/api/products');assert.equal(catalogueResponse.status,200);
   const catalogue=await catalogueResponse.json(),published=await db.prepare('SELECT id FROM products WHERE active=1 ORDER BY id').all();
-  assert.deepEqual(catalogue.products.map(p=>p.id).sort(),published.map(p=>p.id));
+  assert.deepEqual(catalogue.products.map(p=>p.id).sort(),published.map(p=>p.id).sort());
   for(const product of catalogue.products)assert.equal(Object.hasOwn(product,'cost'),false);
   const marker=await db.prepare('SELECT v FROM sync_state WHERE k=?').get('isolated_persistence_marker');
   if(!marker)await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?)').run('isolated_persistence_marker',crypto.randomUUID());
