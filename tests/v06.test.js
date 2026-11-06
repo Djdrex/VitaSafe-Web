@@ -50,3 +50,29 @@ test('kit registry rejects invalid dates and quantities, preserves older rows an
     assert.equal((await (await request(route)).json()).items[0].expiry_status,expected);
   }
 });
+
+test('admin backup downloads only authenticated ciphertext, or fails closed without a key', async () => {
+  const path = '/api/admin/backup';
+  const key = crypto.randomBytes(32).toString('base64');
+  const loggedIn = await login();
+  cookie = loggedIn.headers.get('set-cookie').split(';')[0];
+  assert.equal((await request(path+'/status',{auth:false})).status,401);
+  assert.equal((await (await request(path+'/status')).json()).configured,false);
+  assert.equal((await request(path)).status,503);
+  await stop();
+  await start({...env,VITASAFE_BACKUP_KEY:key});
+  try {
+    assert.deepEqual(await (await request(path+'/status')).json(),{configured:true});
+    const result = await request(path);
+    assert.equal(result.status,200);
+    assert.match(result.headers.get('content-disposition'),/\.enc/);
+    const bytes = Buffer.from(await result.arrayBuffer());
+    assert.ok(!bytes.includes(Buffer.from(env.VITASAFE_ADMIN_EMAIL)));
+    const clear = require('../src/backup-secure').decrypt(bytes,key);
+    assert.ok(require('../src/db/recovery').validate(clear).tables.products.length);
+    assert.equal((await db.prepare("SELECT count(*) n FROM audit_log WHERE kind='backup_exported'").get()).n,1);
+  } finally {
+    await stop();
+    await start(env);
+  }
+});
