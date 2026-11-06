@@ -1,3 +1,33 @@
+# Estado verificado — 5 de noviembre de 2026 (Lima)
+
+Esta sección prevalece sobre los registros históricos siguientes. Versión 0.10.0-preview; NO lista para ventas reales.
+
+- Código ejecutado: `b268c2e2b2e7077f22d55c82d8d026808a6f4fd9`, servicio aislado Live. Último commit de documentación anterior a esta evidencia: `d77e83fdd3756fdec135061e73466ae0adfb8640`. Sin cambios de código ni nuevo despliegue por estas pruebas de navegador.
+- Autenticación administrativa legítima completada mediante formulario seguro. Contraseña existente conservada, sin revelarla ni alterar credenciales.
+- Cierre del ensayo interrumpido: `DEMO-fee7fdca-c961-496e-832e-85af8e3655d2` cancelado mediante revisión de reservas vencidas. Stock del producto existente pasó de 1 a 2. No se aprobó pago ni se duplicó ese pedido.
+- Compra integral REAL EN NAVEGADOR, exclusivamente ficticia: se añadió una unidad del producto existente `DEMO-BROWSER-CATALOGUE-20261030` al carrito, se confirmó el ensayo y se creó una sola orden `DEMO-88ed00e5-2670-45d5-9bde-74e536fbd2c3`, S/12.34. Recorrido verificado: Pendiente → Confirmado/Pago aprobado simulado → En preparación → Enviado → Entregado → Pago devuelto → Recepción física. Bolsa vacía después de crear el pedido.
+- Reembolso sin reposición: panel mostró 1 unidad después del reembolso. Únicamente después de recibir devolución física mostró 2 unidades. Producto despublicado al terminar (Visible: No), conservando imagen, precio, costo y registro. No recrear producto ni pedido para repetir esta prueba.
+- Excel posterior a revocación resuelto: el evento download devolvió ruta inexistente; la descarga alternativa documentada del MISMO enlace mediante downloadMedia produjo un archivo accesible de 39 336 bytes. No fue necesario cambiar membresías. Evidencia: `docs/V010_POST_REVOCACION_20261105.xlsx`, SHA-256 `25ae3542ebc24da2dcc139758514be33e19e14394d6ca7f5e8ff902193cc1394`.
+- Validación automatizada del archivo REAL descargado: 17 hojas; nuevo pedido aparece exactamente una vez, Entregado/Devuelto, S/12.34; exactamente dos movimientos (-1 Reserva, +1 Retorno físico), saldo cero; inventario vinculado 2. Membresía manual `9d1021af-a16c-43ac-8339-307d4c11ffa3` aparece una vez, refunded, siete transacciones únicas y todas reembolsadas; cero suscripciones activas; ingresos netos de membresías S/0 y cobros reales S/0. Detalle en `docs/V010_VERIFICACION_NAVEGADOR_20261105.json`. No se recalcularon fórmulas en Microsoft Excel ni se validaron gráficos en esta sesión.
+- Suite de código previa sigue en 55/55 (local y build). No se ejecutó otra suite completa tras estas operaciones exclusivamente de datos de ensayo/documentación. Las comprobaciones del XLSX son adicionales y no alteran artificialmente el conteo de pruebas.
+- PR #2 abierto y borrador, main `d3ba56bebde80c672246c05fc8fa19a67b7d0415`, autoDeploy=no confirmados por conectores. DEMO_MODE visible activo, sin pagos ni correos reales. No se modificó servicio público.
+
+## Pendientes técnicos
+
+1. Cliente Premium positivo en navegador con sesión distinta; no equivale a la prueba HTTP automática ni a la sesión administrativa. No crear accesos alternativos o credenciales fijas.
+2. Componentes, lotes y vencimientos; delivery integrado al checkout; configuración comercial y recuperación segura de cuentas. Auditar módulos existentes antes de modificar.
+3. Pruebas móviles/tablet completas, accesibilidad y concurrencia final. Las capturas de esta sesión son de navegador de escritorio, no dispositivo físico.
+4. Respaldo cifrado/restauración local PGlite ya probados; copia externa durable y restauración PostgreSQL remota todavía NO verificadas.
+5. Reporte operativo conserva 17 hojas y datos coherentes. Traducción completa de estados visibles y gráficos del informe de demostración no se declaran resueltos: estados técnicos se conservan y la guía del informe identifica gráficos/comparaciones como pendientes.
+
+## Intervención del propietario para lanzamiento
+
+Destino privado autorizado para respaldos y custodia de clave; infraestructura permanente y presupuesto antes del vencimiento previsto informado 24/11/2026; información comercial/legal; afiliación y credenciales sandbox de pasarela; consentimiento Microsoft y proveedor de correo. No contratar ni activar integraciones reales. No pedir secretos por chat.
+
+**Próximo paso exacto:** conservar cerrados los dos pedidos anteriores y el producto despublicado. No repetir membresías ni exportación por el antiguo bloqueo ya resuelto. Revisar componentes/lotes/delivery y seleccionar el siguiente flujo verificable usando el código actual. Mantener DEMO_MODE=true, PR borrador, main intacta y autoDeploy desactivado. No declarar v1.0 lista.
+
+---
+
 # Estado verificado — 4 de noviembre de 2026 (Lima)
 
 Esta sección prevalece sobre los registros históricos siguientes.
