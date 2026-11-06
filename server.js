@@ -205,6 +205,21 @@ async function ensureReady(s) {
   if (!(await db.prepare('SELECT id FROM products WHERE active=1 AND price>0 AND stock>0 LIMIT 1').get())) issues.push('Producto disponible con precio real');
   return issues;
 }
+// Expiration dates are calendar days in Peru, independent of the server timezone.
+function expiryDay(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const day = new Date(value + 'T00:00:00Z');
+  return Number.isFinite(day.getTime()) && day.toISOString().slice(0, 10) === value ? day : null;
+}
+function kitExpiryStatus(value, today) {
+  if (!value) return 'Sin fecha';
+  const day = expiryDay(value);
+  if (!day) return 'Revisar fecha';
+  const days = (day - today) / 86400000;
+  if (days < 0) return 'Vencido';
+  if (days === 0) return 'Vence hoy';
+  return days <= 30 ? 'Vence en 30 días o menos' : 'Vigente';
+}
 async function api(req, res, u) {
   const m = req.method,
     p = u.pathname,
@@ -615,18 +630,36 @@ async function api(req, res, u) {
         ok: true
       });
     }
-    if (p === '/api/admin/kit-items' && m === 'GET') return json(res, 200, {
-      items: await db.prepare('SELECT * FROM kit_items ORDER BY expires_on').all()
-    });
+    if (p === '/api/admin/kit-items' && m === 'GET') {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(new Date());
+      const date = Object.fromEntries(parts.map(part => [part.type, part.value]));
+      const today = expiryDay([date.year, date.month, date.day].join('-'));
+      const items = await db.prepare('SELECT * FROM kit_items ORDER BY expires_on, id').all();
+      return json(res, 200, {items: items.map(item => ({
+        ...item, expiry_status: kitExpiryStatus(item.expires_on, today)
+      }))});
+    }
     if (p === '/api/admin/kit-items' && m === 'POST') {
-      const id = crypto.randomBytes(8).toString('hex'),
-        email = validateString(b.owner_email, 150),
-        item = validateString(b.item_name, 150);
+      const id = crypto.randomBytes(8).toString('hex');
+      const email = validateString(b.owner_email, 150);
+      const item = validateString(b.item_name, 150);
+      const expires = b.expires_on ?? '';
+      const rawQuantity = b.quantity === undefined ? 1 : b.quantity;
+      const quantity = typeof rawQuantity === 'string' && /^\d+$/.test(rawQuantity)
+        ? Number(rawQuantity) : rawQuantity;
       if (!email.includes('@') || !item) fail(400, 'Datos inválidos');
-      await db.prepare('INSERT INTO kit_items(id,owner_email,product_id,item_name,lot,expires_on,quantity) VALUES(?,?,?,?,?,?,?)').run(id, email, validateString(b.product_id || '', 40), item, validateString(b.lot || '', 80), validateString(b.expires_on || '', 10), Math.max(1, Number(b.quantity) || 1));
-      return json(res, 201, {
-        id
+      if (expires !== '' && !expiryDay(expires)) fail(400, 'Fecha de vencimiento inválida');
+      if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 2147483647)
+        fail(400, 'La cantidad debe ser un entero positivo');
+      await db.transaction(async () => {
+        await db.prepare('INSERT INTO kit_items(id,owner_email,product_id,item_name,lot,expires_on,quantity) VALUES(?,?,?,?,?,?,?)')
+          .run(id, email, validateString(b.product_id || '', 40), item,
+            validateString(b.lot || '', 80), expires, quantity);
+        await audit('kit_item_registered', id, String(quantity));
       });
+      return json(res, 201, {id});
     }
     if (p === '/api/admin/stats' && m === 'GET') return json(res, 200, {
       products: (await db.prepare('SELECT COUNT(*) n FROM products').get()).n,
