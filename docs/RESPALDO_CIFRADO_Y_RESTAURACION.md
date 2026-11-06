@@ -25,3 +25,5 @@ La copia incluye credenciales cifradas de integraciones y hashes de contraseña:
 Prueba automatizada `tests/v1-cart-checkout.test.js`: compra integrada, devolución física, reporte de 17 hojas, snapshot, cifrado, rechazo de clave incorrecta, restauración en destino vacío, comparación de stock/pedido y rechazo de destino no vacío. No se migraron ni eliminaron datos de Render.
 
 Pendiente del propietario: destino externo y acceso autorizado, custodia de clave y presupuesto/infraestructura permanente. Pendiente técnico posterior: ejecutar el procedimiento desde la red interna, verificar la copia descargada del proveedor y restaurarla en PostgreSQL remoto. Vencimiento previsto informado de PostgreSQL Free: 24/11/2026; confirmar en Render antes del plan de corte.
+
+Desde el panel, Datos y Excel permite descargar el mismo formato cifrado que utiliza la herramienta de restauración. El servidor registra el administrador que exporta la copia. Si falta una clave válida, la descarga queda bloqueada. Usa una clave aleatoria de 32 bytes en base64 estándar, sin espacios, y conserva su copia fuera del servicio.
