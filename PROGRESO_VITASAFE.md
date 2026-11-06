@@ -1,3 +1,29 @@
+# 6 de noviembre de 2026 · Punto de continuidad
+
+VitaSafe 0.10.0-preview, rama `v06-postgres-excel-onedrive`, PR #2 en borrador. Código desplegado `ab04f5d054dfe4718a3edcac873ff20e8e0a1b36`. Render confirmó Live en `dep-dbmm3l2jnfac73asnav0`, servicio `vitasafe-v06-pr2-test`. Este informe se guarda en un commit documental posterior. Main sigue en `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. AutoDeploy desactivado.
+
+## Terminado y verificado
+
+- Evidencias del navegador del 5/11 guardadas en GitHub en `c057f04c0f21a07cb0425e20bc0149f16aee5015`. El Excel real de 17 hojas conserva el hash verificado, una sola fila del pedido ficticio de S/12.34, dos movimientos que suman cero y stock final de 2. La membresía revocada conserva sus siete transacciones únicas reembolsadas. Ver sección anterior por identificadores. No repetir estos ensayos manuales.
+- Registro existente de componentes por cliente: el API valida fechas de calendario y cantidades enteras positivas y registra el alta en auditoría dentro de la misma transacción. El panel muestra lote, cantidad y vencimiento en fecha de Perú. Clasifica vencido, hoy, próximos 30 días, vigente, sin fecha y fecha histórica inválida. Los registros previos se preservan. Las altas comerciales siguen bloqueadas en demostración.
+- La pestaña VitaSafe Care dejó de mostrar un precio anual fijo del piloto y enlaza al gestor de planes y suscripciones.
+- Copias cifradas: se reprodujo la aceptación de etiquetas AES-GCM truncadas a cuatro bytes. Ahora se exige una etiqueta de 16 bytes, IV de 12 y codificación válida. La descarga administrativa usa exclusivamente el formato cifrado compatible con la restauración. Solo el administrador puede exportar, queda auditoría y la falta de clave bloquea la descarga.
+- Pruebas locales HTTP con PGlite: suite de 58/58 aprobadas, 0 fallos. Incluye fechas imposibles, años bisiestos, límites 0/30/31 días, datos antiguos, cantidades incorrectas, permisos, bloqueo sin clave y descifrado de una descarga autorizada con clave temporal. Prueba focal del verificador tras su ajuste: aprobada tras dos aperturas de base. Render ejecutó 58/58 al compilar el código final.
+- Verificación HTTP durante arranque sobre PostgreSQL 18 interno: lectura administrativa de componentes, denegación a cliente, escritura demo bloqueada, acceso al respaldo rechazado al cliente y al administrador sin clave. Indicadores emitidos: component_registry_checked=true, backup_access_checked=true, backup_key_configured=false, previous_marker=true, report_sheets=17 y demo=true. No se descargó una copia del servicio. La prueba de descifrado se hizo localmente con datos ficticios.
+- El navegador mostró la portada del servicio de pruebas y su barra de demostración. La nueva pantalla autenticada de vencimientos no se verificó visualmente en un dispositivo móvil en esta sesión.
+
+## Pendiente técnico
+
+El registro de insumos por cliente es distinto del inventario comercial por componentes. Falta vincular la composición de cada kit a lotes disponibles, reservarlos transaccionalmente, bloquear lotes vencidos y mantener trazabilidad al cancelar o recibir una devolución física. Delivery tiene campos en pedidos y un editor de condiciones, pero el checkout de ensayo aún no cotiza tarifas según cobertura y horario. Faltan el recorrido positivo de cliente Premium desde navegador, recuperación de cuenta y comprobaciones móviles y de accesibilidad completas.
+
+**Siguiente paso exacto**: enlazar la composición de un kit a lotes de almacén en el entorno aislado y probar dos reservas concurrentes contra la última unidad válida, un lote vencido y la devolución física sin doble reposición. Conservar los pedidos y la membresía de las evidencias anteriores.
+
+## Pendiente del propietario
+
+Render devuelve PostgreSQL 18 Free disponible, con vencimiento el **24/11/2026 a las 00:28 de Lima**. Para verificar una copia fuera del servicio hacen falta un destino privado aprobado, custodia separada de la clave y un destino PostgreSQL vacío distinto para el ensayo de restauración. Introducir `VITASAFE_BACKUP_KEY` directamente en el servicio aislado al aprobar el plan de custodia, nunca en el chat. Procedimiento en `docs/RESPALDO_CIFRADO_Y_RESTAURACION.md`. Siguen pendientes datos comerciales y legales, pasarela sandbox y consentimientos externos. Lanzamiento comercial pendiente.
+
+---
+
 # Estado verificado — 5 de noviembre de 2026 (Lima)
 
 Esta sección prevalece sobre los registros históricos siguientes. Versión 0.10.0-preview; NO lista para ventas reales.
