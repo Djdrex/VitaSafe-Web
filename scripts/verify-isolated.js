@@ -45,6 +45,21 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   adminCookie=login.headers.get('set-cookie').split(';')[0];
   assert.equal((await request('/api/admin/stats','GET',null,adminCookie)).status,200);
   assert.equal((await request('/api/auth/status','GET',null,adminCookie)).status,200);
+  onStage('component_registry');
+  const registry=await request('/api/admin/kit-items','GET',null,adminCookie);
+  assert.equal(registry.status,200);
+  const {items}=await registry.json();
+  assert.ok(Array.isArray(items));
+  assert.ok(items.every(item=>['Vencido','Vence hoy','Vence en 30 días o menos','Vigente','Sin fecha','Revisar fecha'].includes(item.expiry_status)));
+  assert.equal((await request('/api/admin/kit-items','GET',null,customerCookie)).status,401);
+  assert.equal((await request('/api/admin/kit-items','POST',{},adminCookie)).status,403);
+  onStage('encrypted_backup');
+  const backupInfo=await request('/api/admin/backup/status','GET',null,adminCookie);
+  assert.equal(backupInfo.status,200);
+  const {configured}=await backupInfo.json();
+  assert.equal(typeof configured,'boolean');
+  assert.equal((await request('/api/admin/backup','GET',null,customerCookie)).status,401);
+  if (!configured) assert.equal((await request('/api/admin/backup','GET',null,adminCookie)).status,503);
   for(const type of Object.keys(excel.columns)){
    onStage('excel_'+type);
    const out=await request('/api/admin/excel/export?type='+type,'GET',null,adminCookie);assert.equal(out.status,200);
@@ -80,7 +95,7 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   const commerce=await require('./verify-commerce').verifyCommerceHTTP(db,request,adminCookie,customerCookie,base);
   onStage('platform');
   const platform=await require('./verify-platform').verifyPlatform(db,request,adminCookie,customerCookie);
-  const report={platform,commerce,onedrive_configured:driveStatus.configured===true,onedrive_connected:driveStatus.connected===true,demo:true,checks:['catalogue','admin_login','wrong_password','customer_role_denied_admin','registration_blocked','sales_blocked','excel_four_modules','inventory_validation'],previous_marker:!!marker,database:db.kind,controlled_import:env.EXCEL_TEST_IMPORT_ENABLED==='true'};
+  const report={platform,commerce,component_registry_checked:true,backup_access_checked:true,backup_key_configured:configured,onedrive_configured:driveStatus.configured===true,onedrive_connected:driveStatus.connected===true,demo:true,checks:['catalogue','admin_login','wrong_password','customer_role_denied_admin','registration_blocked','sales_blocked','excel_four_modules','inventory_validation'],previous_marker:!!marker,database:db.kind,controlled_import:env.EXCEL_TEST_IMPORT_ENABLED==='true'};
   await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run('isolated_last_verification',JSON.stringify(report));
   return report;
  }finally{await new Promise(r=>app.server.close(r));await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(customerCookie.slice(11)));if(adminCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(adminCookie.slice(11)))}
