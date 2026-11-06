@@ -58,3 +58,16 @@ test('order outbox reaches durable simulation once, without recipient data or du
  assert.equal(delivered.length,4);assert.equal(new Set(delivered).size,4);assert.equal(await p.prepareOrderJobs(db,admin),0);
  assert.ok((await db.prepare("SELECT state FROM platform_jobs WHERE id LIKE 'commerce:%'").all()).every(r=>r.state==='simulated'));
 });
+
+test('encrypted backup requires the original full authentication tag and canonical envelope', async () => {
+  const secure = require('../src/backup-secure');
+  const source = await require('../src/db/recovery').snapshot(db);
+  const key = crypto.randomBytes(32).toString('base64');
+  const envelope = JSON.parse(secure.encrypt(source, key));
+  const decrypt = values => secure.decrypt(Buffer.from(JSON.stringify({...envelope, ...values})), key);
+  for (const length of [4, 8, 12, 15])
+    assert.throws(() => decrypt({tag: Buffer.from(envelope.tag,'base64').subarray(0,length).toString('base64')}));
+  assert.throws(() => decrypt({iv: Buffer.alloc(8).toString('base64')}));
+  assert.throws(() => decrypt({ciphertext: envelope.ciphertext+'!'}));
+  assert.ok(decrypt({}).equals(source));
+});
