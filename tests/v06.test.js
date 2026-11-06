@@ -14,3 +14,39 @@ test('Excel round trips typed products and stock, validates all four templates, 
 test('Microsoft OAuth is owner-scoped, encrypted, single use, and reports cannot upload without consent',async()=>{const owner=await db.prepare("SELECT id,role FROM users WHERE role='admin'").get();const microsoft={MICROSOFT_CLIENT_ID:'test-client',MICROSOFT_CLIENT_SECRET:crypto.randomBytes(24).toString('hex'),APP_ORIGIN:'https://example.invalid',ONEDRIVE_TOKEN_KEY:crypto.randomBytes(32).toString('base64')};assert.equal(drive.configured({}),false);const url=new URL(await drive.begin(db,owner,microsoft));assert.equal(url.hostname,'login.microsoftonline.com');assert.equal(url.searchParams.get('code_challenge_method'),'S256');assert.equal(url.searchParams.get('scope'),'offline_access Files.ReadWrite.AppFolder');const query=new URLSearchParams({state:url.searchParams.get('state'),code:'fake-code'});let called=0;const transport=async(endpoint,options)=>{called++;assert.match(endpoint,/consumers\/oauth2\/v2.0\/token/);assert.ok(options.body.get('code_verifier'));return {ok:true,json:async()=>({access_token:'synthetic-access',refresh_token:'synthetic-refresh',expires_in:3600})}};await drive.callback(db,owner,microsoft,query,transport);assert.equal(called,1);const record=await db.prepare('SELECT encrypted FROM integration_tokens WHERE user_id=?').get(owner.id);assert.ok(!record.encrypted.includes('synthetic'));await assert.rejects(drive.callback(db,owner,microsoft,query,transport));const encrypted=drive.seal('value',microsoft);assert.equal(drive.unseal(encrypted,microsoft),'value');assert.throws(()=>drive.unseal(encrypted,{...microsoft,ONEDRIVE_TOKEN_KEY:crypto.randomBytes(32).toString('base64')}));let uploaded=false;const result=await drive.sync(db,owner,microsoft,async(url,opts)=>{assert.match(url,/special\/approot:/);assert.equal(opts.method,'PUT');const rows=await sheets.preview('reports',opts.body);assert.equal(rows.errors.length,0);uploaded=true;return {ok:true}});assert.ok(uploaded&&result.uploaded);await db.prepare('DELETE FROM integration_tokens WHERE user_id=?').run(owner.id);await assert.rejects(drive.sync(db,owner,microsoft),/consent/)});
 test('non-demo regression: orders reserve stock atomically, retries are idempotent and cancellation restores stock once',async()=>{await stop();await start({...env,DEMO_MODE:'false'});const r=await login();cookie=r.headers.get('set-cookie').split(';')[0];await db.prepare('UPDATE products SET stock=3,price=6990 WHERE id=?').run('campus');const date=new Date(Date.now()+3*86400000).toISOString().slice(0,10),payload={customer:'Synthetic Customer',phone:'000000000',delivery_type:'pickup',requested_date:date,requested_time:'10:00',payment_method:'manual',items:[{id:'campus',qty:2}],idempotency_key:'test-order-key-123456'};const create=await request('/api/order',{method:'POST',body:payload});assert.equal(create.status,201);const order=(await create.json()).order;assert.equal((await db.prepare('SELECT stock FROM products WHERE id=?').get('campus')).stock,1);assert.equal((await request('/api/order',{method:'POST',body:payload})).status,200);const tracked=await request('/api/track/'+order.id+'?key='+order.secret,{auth:false});assert.equal(tracked.status,200);assert.equal((await request('/api/track/'+order.id+'?key=wrong',{auth:false})).status,404);for(let i=0;i<2;i++)assert.equal((await request('/api/admin/orders/'+order.id,{method:'PATCH',body:{status:'cancelled'}})).status,200);assert.equal((await db.prepare('SELECT stock FROM products WHERE id=?').get('campus')).stock,3);assert.equal((await db.prepare("SELECT count(*) n FROM inventory_events WHERE reason='order_cancelled'").get()).n,1);await stop();await start(env)});
 test('logout expires real sessions without altering owner credentials',async()=>{const r=await request('/api/auth/logout',{method:'POST',body:{}});assert.equal(r.status,200);assert.equal((await (await request('/api/auth/status')).json()).admin,false);assert.equal((await login()).status,200)});
+
+test('kit registry rejects invalid dates and quantities, preserves older rows and respects demo permissions', async () => {
+  const route = '/api/admin/kit-items';
+  await stop();
+  await start({...env, DEMO_MODE: 'false'});
+  const session = await login();
+  cookie = session.headers.get('set-cookie').split(';')[0];
+  const sample = {owner_email:'test@example.invalid', item_name:'FICTICIO gasa', lot:'FICTICIO-01', quantity:'2', expires_on:'2028-02-29'};
+  const add = body => request(route, {method:'POST',body});
+  try {
+    for (const quantity of [0,-1,1.5,'',true,'2x',2147483648]) assert.equal((await add({...sample,quantity})).status,400);
+    for (const expires_on of ['2027-02-29','2026-02-30','2026-13-01','2026-11-06x',false]) assert.equal((await add({...sample,expires_on})).status,400);
+    const saved = await add(sample);
+    assert.equal(saved.status,201);
+    const {id} = await saved.json();
+    assert.equal((await db.prepare('SELECT count(*) n FROM kit_items').get()).n,1);
+    assert.equal((await db.prepare('SELECT count(*) n FROM audit_log WHERE ref=? AND kind=?').get(id,'kit_item_registered')).n,1);
+    await db.prepare('UPDATE kit_items SET expires_on=? WHERE id=?').run('2026-02-30',id);
+  } finally {
+    await stop();
+    await start(env);
+  }
+  assert.equal((await add(sample)).status,403);
+  assert.equal((await request(route,{auth:false})).status,401);
+  const {items} = await (await request(route)).json();
+  assert.equal(items.length,1);
+  assert.equal(items[0].expiry_status,'Revisar fecha');
+  assert.equal(items[0].expires_on,'2026-02-30');
+  assert.equal(items[0].quantity,2);
+  const today = new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Lima'}).format(new Date());
+  for (const [offset, expected] of [[-1,'Vencido'],[0,'Vence hoy'],[30,'Vence en 30 días o menos'],[31,'Vigente'],[null,'Sin fecha']]) {
+    const expiry = offset===null ? '' : new Date(Date.parse(today+'T00:00:00Z')+offset*86400000).toISOString().slice(0,10);
+    await db.prepare('UPDATE kit_items SET expires_on=? WHERE id=?').run(expiry,items[0].id);
+    assert.equal((await (await request(route)).json()).items[0].expiry_status,expected);
+  }
+});
