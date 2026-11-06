@@ -13,6 +13,15 @@ function decode(value, length) {
   return bytes;
 }
 
+function configured(key64) {
+  try {
+    decode(key64, 32);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function encrypt(bytes, key64) {
   recovery.validate(bytes);
   const iv = crypto.randomBytes(12);
@@ -39,4 +48,4 @@ function decrypt(bytes, key64) {
   return plaintext;
 }
 
-module.exports = {encrypt, decrypt};
+module.exports = {encrypt, decrypt, configured};
