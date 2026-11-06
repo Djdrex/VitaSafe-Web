@@ -4,8 +4,21 @@ const hash=x=>crypto.createHash('sha256').update(x).digest('hex');
 function binary(req){return new Promise((resolve,reject)=>{const chunks=[];let size=0;req.on('data',c=>{size+=c.length;if(size>5*1024*1024){reject(Object.assign(Error('Máximo 5 MB'),{status:413}));req.destroy()}else chunks.push(c)});req.on('end',()=>resolve(Buffer.concat(chunks)));req.on('error',reject)})}
 function download(res,name,buffer,type){res.writeHead(200,{'Content-Type':type,'Content-Disposition':'attachment; filename="'+name+'"','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(buffer)}
 async function backup(db){return require('../db/recovery').snapshot(db)}
-async function handleIntegrations(req,res,url,c){const {db,user,environment:env,demo,body,json,fail}=c,p=url.pathname,m=req.method;if(!p.startsWith('/api/admin/excel/')&&!p.startsWith('/api/admin/onedrive/')&&p!=='/api/onedrive/callback'&&p!=='/api/admin/backup')return false;if(!user||user.role!=='admin')fail(401,'Inicia sesión');
- if(p==='/api/admin/backup'&&m==='GET'){download(res,'vitasafe-backup.json',await backup(db),'application/json');return true}
+async function handleIntegrations(req,res,url,c){const {db,user,environment:env,demo,body,json,fail}=c,p=url.pathname,m=req.method;if(!p.startsWith('/api/admin/excel/')&&!p.startsWith('/api/admin/onedrive/')&&p!=='/api/onedrive/callback'&&!['/api/admin/backup','/api/admin/backup/status'].includes(p))return false;if(!user||user.role!=='admin')fail(401,'Inicia sesión');
+ if ((p === '/api/admin/backup' || p === '/api/admin/backup/status') && m === 'GET') {
+   const secure = require('../backup-secure');
+   const ready = secure.configured(env.VITASAFE_BACKUP_KEY);
+   if (p.endsWith('/status')) {
+     json(res, 200, {configured: ready});
+     return true;
+   }
+   if (!ready) fail(503, 'Falta configurar la clave de respaldo');
+   const encrypted = secure.encrypt(await backup(db), env.VITASAFE_BACKUP_KEY);
+   await db.prepare('INSERT INTO audit_log(kind,ref,detail) VALUES(?,?,?)')
+     .run('backup_exported', user.id, 'encrypted-v1');
+   download(res, 'vitasafe-backup.enc', encrypted, 'application/octet-stream');
+   return true;
+ }
  if(p==='/api/admin/excel/export'&&m==='GET'){const type=url.searchParams.get('type')||'reports';if(!excel.columns[type])fail(400,'Tipo desconocido');download(res,'vitasafe-'+type+'.xlsx',await excel.exportWorkbook(db,type,{template:url.searchParams.get('template')==='true'}),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');return true}
  if(['/api/admin/excel/preview','/api/admin/excel/apply','/api/admin/excel/test-apply'].includes(p)&&m==='POST'){const type=url.searchParams.get('type');let data;try{data=await excel.preview(type,await binary(req))}catch(e){fail(400,e.message)}if(p.endsWith('/test-apply')){if(!demo||env.VITASAFE_TEST_ENV!=='true'||env.EXCEL_TEST_IMPORT_ENABLED!=='true')fail(403,'Importación de ensayo deshabilitada');if(data.errors.length)fail(400,'El archivo contiene errores');for(const row of data.rows){if(data.type==='products'&&(!row.id.startsWith('DEMO-')||!row.slug.startsWith('DEMO-')||!String(row.name).startsWith('FICTICIO')||row.active!==0))fail(400,'Solo productos ficticios inactivos DEMO-');if(data.type==='inventory'&&!row.product_id.startsWith('DEMO-'))fail(400,'Solo inventario ficticio DEMO-');if(data.type==='orders'&&(!row.id.startsWith('DEMO-')||!String(row.customer).startsWith('FICTICIO')||!String(row.email).endsWith('@example.invalid')||JSON.parse(row.items).some(i=>!i.id.startsWith('DEMO-'))))fail(400,'Solo historial ficticio DEMO-');if(data.type==='reports'&&!String(row.metric).startsWith('DEMO-'))fail(400,'Solo indicadores ficticios DEMO-')}try{json(res,200,await excel.applyImport(db,data));return true}catch{fail(409,'Importación ficticia revertida')}}if(p.endsWith('/apply')){if(demo||env.EXCEL_IMPORT_ENABLED!=='true')fail(403,'Aplicación de importaciones bloqueada');if(data.errors.length)fail(400,'El archivo contiene errores');try{json(res,200,await excel.applyImport(db,data));return true}catch{fail(409,'No se pudo aplicar la importación; se revirtieron los cambios')}}json(res,200,{...data,rows:data.rows.slice(0,20),can_apply:!demo&&env.EXCEL_IMPORT_ENABLED==='true'});return true}
  if(p==='/api/admin/onedrive/status'&&m==='GET'){const token=await db.prepare('SELECT updated_at FROM integration_tokens WHERE user_id=?').get(user.id),last=await db.prepare('SELECT v FROM sync_state WHERE k=?').get('last_sync');json(res,200,{configured:onedrive.configured(env),connected:!!token,automatic:env.ONEDRIVE_AUTO_SYNC==='true',last_sync:last?Number(last.v):null,scope:'Files.ReadWrite.AppFolder'});return true}
