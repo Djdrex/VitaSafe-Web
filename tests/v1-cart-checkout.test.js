@@ -57,7 +57,24 @@ test('catalogue cart HTTP checkout, retry, payment, fulfilment, physical return 
  const winner=await race.find(r=>r.status===201).json();
  await action('transition',{orderId:winner.id,status:'cancelled'});
  assert.deepEqual(await available(),{X:20,A:3,B:3,V:2});
+ const platform=require('../src/platform');
+ const zone=await platform.saveRecord(db,{kind:'delivery',title:'FICTICIO Zona de prueba',fee_soles:'3,50',opens:'09:00',closes:'13:00'},actor);
+ const liveZone=await platform.editorial(db,zone.id,'publish',zone.revision,actor);
+ const date=new Date(Date.now()+2*86400000).toISOString().slice(0,10);
+ const withDelivery={...input,key:crypto.randomUUID(),delivery:{id:zone.id,revision:liveZone.revision,date,time:'10:30',fee:1}};
+ const deliveryOrder=body=>post('/api/admin/simulation/catalogue-checkout',body);
+ assert.equal((await deliveryOrder({...withDelivery,delivery:{...withDelivery.delivery,time:'14:00'}})).status,409);
+ assert.equal((await deliveryOrder({...withDelivery,delivery:{...withDelivery.delivery,date:'2026-02-30'}})).status,400);
+ const deliveryResult=await deliveryOrder(withDelivery);
+ assert.equal(deliveryResult.status,201);const delivered=await deliveryResult.json();
+ assert.equal(delivered.total,2818);
+ await platform.editorial(db,zone.id,'archive',liveZone.revision,actor);
+ assert.equal((await (await deliveryOrder(withDelivery)).json()).id,delivered.id);
+ assert.equal((await deliveryOrder({...withDelivery,key:crypto.randomUUID()})).status,409);
+ await action('transition',{orderId:delivered.id,status:'cancelled'});
  const report=await fetch(base+'/api/platform/report',{headers:{cookie}});assert.equal(report.status,200);const Excel=require('exceljs'),w=new Excel.Workbook();await w.xlsx.load(Buffer.from(await report.arrayBuffer()));assert.equal(w.worksheets.length,17);
+ const deliveryRow=w.getWorksheet('Pedidos').getSheetValues().find(row=>row?.[1]===delivered.id);
+ assert.deepEqual(deliveryRow.slice(6,12),[28.18,24.68,3.5,'FICTICIO Zona de prueba',date,'10:30']);
  const snap=await recovery.snapshot(db),key=crypto.randomBytes(32).toString('base64'),encrypted=secure.encrypt(snap,key);assert.ok(!encrypted.includes(Buffer.from('FICTICIO prueba integral')));assert.throws(()=>secure.decrypt(encrypted,crypto.randomBytes(32).toString('base64')));
  restored=await openDatabase({}, {pglite:new PGlite()});const result=await recovery.restoreEmpty(restored,secure.decrypt(encrypted,key));assert.equal(result.restored,true);assert.equal((await core.readOrder(restored,o.id,actor)).payment_status,'refunded');assert.equal((await restored.prepare('SELECT stock FROM products WHERE id=?').get(p.id)).stock,5);await assert.rejects(recovery.restoreEmpty(restored,secure.decrypt(encrypted,key)),/empty/);
  }finally{if(app)await new Promise(r=>app.server.close(r));await db.close();if(restored)await restored.close()}
