@@ -348,9 +348,10 @@ async function api(req, res, u) {
   });
   if (p === '/api/products' && m === 'GET') {
     if (priv && !isAdmin && !DEMO_MODE) fail(403, 'Tienda privada');
-    return json(res, 200, {
-      products: isAdmin && environment.VITASAFE_TEST_ENV==='true' ? await require('./src/catalogue').list(db) : await db.prepare(isAdmin ? 'SELECT * FROM products ORDER BY rowid' : 'SELECT id,name,slug,description,category,price,stock,image,contents,active FROM products WHERE active=1 ORDER BY rowid').all()
-    });
+    const rows = isAdmin && environment.VITASAFE_TEST_ENV==='true' ? await require('./src/catalogue').list(db) : await db.prepare(isAdmin ? 'SELECT * FROM products ORDER BY rowid' : 'SELECT id,name,slug,description,category,price,stock,image,contents,active FROM products WHERE active=1 ORDER BY rowid').all();
+    const products = DEMO_MODE && environment.VITASAFE_TEST_ENV==='true'
+      ? await require('./src/commerce/lots').withAvailability(db,rows,isAdmin) : rows;
+    return json(res,200,{products});
   }
   if (p === '/api/order' && m === 'POST') {
     if (priv && !isAdmin) fail(403, 'Tienda privada');
