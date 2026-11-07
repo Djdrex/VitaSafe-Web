@@ -13,7 +13,7 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   if(url.hostname!=='dpg-dbep767avr4c73bll9u0-a')throw Error('Expected existing internal database hostname');
  }
  onStage('application');
- const app=await createApp({database:db,environment:env});
+ const app=await createApp({database:db,environment:env,verifyCustomerLogin:true});
  const password=crypto.randomBytes(32).toString('base64url');
  const customerId='DEMO-FICTICIO-CLIENTE';
  let customerCookie;
@@ -23,8 +23,7 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   if(existing)assert.deepEqual(existing,{email:'cliente-ficticio@example.invalid',role:'customer'});
   else await db.prepare('INSERT INTO users(id,email,name,password_hash,role) VALUES(?,?,?,?,?)').run(customerId,'cliente-ficticio@example.invalid','CLIENTE FICTICIO - SIN VALOR COMERCIAL',createPasswordHash(password),'customer');
   await db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(createPasswordHash(password),customerId);
-  const t=crypto.randomBytes(32).toString('base64url');customerCookie='vs_session='+t;
-  await db.prepare('INSERT INTO sessions(token_hash,expires,user_id) VALUES(?,?,?)').run(sha(t),Date.now()+300000,customerId);
+
  });
  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));
  const base='http://127.0.0.1:'+app.server.address().port;
@@ -33,7 +32,9 @@ async function verifyIsolated(db,env,onStage=()=>{}){
  try{
   onStage('authentication');
   assert.equal((await request('/api/admin/stats')).status,401);
-  assert.equal((await request('/api/account/login','POST',{email:'cliente-ficticio@example.invalid',password})).status,403);
+  const customerLogin=await request('/api/account/login','POST',{email:'cliente-ficticio@example.invalid',password});
+  assert.equal(customerLogin.status,200);
+  customerCookie=customerLogin.headers.get('set-cookie').split(';')[0];
   const identity=await (await request('/api/account/me','GET',null,customerCookie)).json();
   assert.equal(identity.user.role,'customer');
   assert.equal((await request('/api/admin/stats','GET',null,customerCookie)).status,401);
@@ -96,11 +97,11 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   onStage('commerce');
   const commerce=await require('./verify-commerce').verifyCommerceHTTP(db,request,adminCookie,customerCookie,base);
   onStage('platform');
-  const platform=await require('./verify-platform').verifyPlatform(db,request,adminCookie,customerCookie);
+  const platform=await require('./verify-platform').verifyPlatform(db,request,adminCookie,customerCookie,true);
   const report={delivery_quote_rollback_verified:warehouseLots,warehouse_lots_rollback_verified:warehouseLots,platform,commerce,component_registry_checked:true,backup_access_checked:true,backup_key_configured:configured,onedrive_configured:driveStatus.configured===true,onedrive_connected:driveStatus.connected===true,demo:true,checks:['catalogue','admin_login','wrong_password','customer_role_denied_admin','registration_blocked','sales_blocked','excel_four_modules','inventory_validation'],previous_marker:!!marker,database:db.kind,controlled_import:env.EXCEL_TEST_IMPORT_ENABLED==='true'};
   await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run('isolated_last_verification',JSON.stringify(report));
   return report;
- }finally{await new Promise(r=>app.server.close(r));await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(customerCookie.slice(11)));if(adminCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(adminCookie.slice(11)))}
+ }finally{await new Promise(r=>app.server.close(r));if(customerCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(customerCookie.slice(11)));if(adminCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(adminCookie.slice(11)))}
 }
 if(require.main===module){const {openDatabase}=require('../src/db/database');(async()=>{if(!process.env.DATABASE_URL)throw Error('Secure configuration required');const db=await openDatabase(process.env);try{console.log('isolated_verification',JSON.stringify(await verifyIsolated(db,process.env,stage=>console.log('isolated_stage',stage))))}finally{await db.close()}})().catch(error=>{const location=String(error.stack||'').split('\n').map(line=>line.match(/(?:verify-[a-z-]+|catalogue-link|core|platform)\.js:\d+:\d+/)?.[0]).filter(Boolean);console.error('isolated_failure',JSON.stringify({locations:location.slice(0,3)}));console.error('Isolated verification failed; inspect secure configuration and test results. No credentials logged.');process.exitCode=1})}
 module.exports={verifyIsolated};
