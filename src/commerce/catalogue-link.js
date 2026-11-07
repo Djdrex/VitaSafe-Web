@@ -27,6 +27,7 @@ async function move(db,id,delta,reason,reference,actor){
  const key=await source(db,id);if(!key)fail(409,'Referencia de catálogo ausente');
  const p=await db.prepare('SELECT stock FROM products WHERE id=? FOR UPDATE').get(key);
  if(!p||p.stock+delta<0)fail(409,'Stock de catálogo insuficiente');
+ await require('./lots').move(db,key,delta,reason,reference,actor);
  await db.prepare('UPDATE products SET stock=stock+? WHERE id=?').run(delta,key);
  await db.prepare('INSERT INTO inventory_events(product_id,delta,reason,ref) VALUES(?,?,?,?)').run(key,delta,'Ensayo: '+reason,reference);
  await db.prepare("UPDATE platform_records SET revision=revision+1,updated=? WHERE id=? AND kind='product_meta'").run(Date.now(),'product:'+key);
