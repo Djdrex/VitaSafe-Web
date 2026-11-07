@@ -34,6 +34,19 @@ async function verifyLots(db) {
       await core.transition(scoped,reserved.id,'cancelled',actor);
       const [row]=await lots.withAvailability(scoped,[{id:product,stock:2}],false);
       assert.equal(row.stock,1);
+      const platform=require('../src/platform');
+      const zone=await platform.saveRecord(scoped,{kind:'delivery',title:'FICTICIO zona temporal',fee_soles:'2.50',opens:'09:00',closes:'15:00'},actor);
+      const published=await platform.editorial(scoped,zone.id,'publish',zone.revision,actor);
+      const date=new Date(Date.now()+2*86400000).toISOString().slice(0,10);
+      const selected={id:published.id,revision:published.revision,date,time:'10:00'};
+      const input={customer,catalogue:true,items:[{id:product,qty:1}],key:randomUUID(),delivery:selected};
+      const quotedOrder=await core.createOrder(scoped,input,actor);
+      assert.equal(quotedOrder.total,350);
+      const saved=await scoped.prepare("SELECT data FROM platform_records WHERE id=? AND kind='order_delivery'").get('order-delivery:'+quotedOrder.id);
+      assert.equal(JSON.parse(saved.data).fee,250);
+      await platform.editorial(scoped,zone.id,'archive',published.revision,actor);
+      assert.equal((await core.createOrder(scoped,input,actor)).id,quotedOrder.id);
+      await assert.rejects(core.createOrder(scoped,{...input,key:randomUUID()},actor),{status:409});
       throw rollback;
     });
   }catch(error){if(error!==rollback)throw error;}
