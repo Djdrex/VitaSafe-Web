@@ -1,3 +1,19 @@
+# 7 de noviembre de 2026 · Cliente Premium y revocación
+
+Rama `v06-postgres-excel-onedrive`, PR #2 en borrador. Código desplegado `2c93c520c51c5b00fe4f4d42800ec9ddf91bdd11`, servicio aislado Live, despliegue `dep-dbnl4eh5efls73bl8pkg`. El commit de este informe es posterior al código desplegado.
+
+- Corregido el ensayo anterior: antes se insertaba directamente una sesión del cliente y solo se verificaba su rol. Ahora el verificador privado obtiene la cookie mediante el inicio de sesión normal por correo y contraseña, y la conserva durante la prueba de autorización. El servidor que atiende al público rechaza la identidad automática del verificador.
+- En el arranque real de Render con PostgreSQL 18, se denegó el archivo tanto al visitante como al cliente gratuito (403). El cliente con membresía ficticia vigente consultó su plan y descargó los bytes correctos de la imagen privada (200). Al revocar el período, la misma sesión recibió 403 al repetir la descarga. Resultado `customer_login_premium_file_revoke=true`. Comprobación HTTP en la instancia de verificación del servicio, no un recorrido de navegador. El recurso técnico se archivó y el período automático quedó revocado.
+- La cuenta de navegador es opcional, separada del ensayo automático y del suscriptor manual histórico. Requiere contraseña válida, cuenta exacta con rol cliente y modo aislado. El panel puede dirigir una confirmación simulada a esa cuenta. El cliente conserva acceso a Mi cuenta al recargar, ve su plan, vigencia e historial propio. Los reintentos de la confirmación desde el panel reutilizan la referencia.
+- Suite local y build final de Render: **59/59**, cero fallos. Nueva prueba verifica acceso con clave y rechazo de otra cuenta, separación de rol, registro público bloqueado, confirmación idempotente, consulta privada, revocación y deshabilitación de sesiones al retirar la clave de ensayo. Se conservaron la exportación de 17 hojas y los marcadores de persistencia. Portada de demostración comprobada en navegador de escritorio. No se verificó este nuevo recorrido Premium de forma interactiva ni en dispositivo físico.
+- Guardados en GitHub el Excel y la captura de la sesión anterior, en `docs/V010_LOTES_DELIVERY_20261106.xlsx` y `docs/V010_LOTES_PANEL_20261106.jpg`. El pedido por S/15.84 continúa documentado como ensayo cerrado. No se repitió la compra ni se reactivó la membresía manual anterior.
+
+**Próximo paso exacto:** en Render → vitasafe-v06-pr2-test → Environment, el propietario puede configurar VITASAFE_TEST_CUSTOMER_PASSWORD para premium-ensayo@example.invalid y aplicar el cambio **solo** al servicio de pruebas. Usar una contraseña distinta de la administrativa de 16 a 256 caracteres, elegida o generada en privado. Seguir `docs/ENSAYO_CLIENTE_PREMIUM.md` con dos sesiones independientes. Se debe verificar apertura, descarga y posterior denegación desde la interfaz, y retirar la clave al cerrar el ensayo. Sin habilitar usuarios comerciales, pagos, correo o sincronización.
+
+Pendientes de lanzamiento: respaldo externo cifrado, restauración remota en un PostgreSQL vacío y continuidad antes del 24/11/2026 00:28 Lima; recuperación de cuenta, verificación móvil/tablet y accesibilidad, cierre de configuraciones y recorridos públicos, aprobación comercial/legal y credenciales de integraciones. Main sigue en d3ba56b y autoDeploy desactivado.
+
+---
+
 # 6 de noviembre de 2026, noche de Lima · Inventario por lotes y delivery
 
 VitaSafe 0.10.0-preview. Prevalece esta sección sobre los registros anteriores. Rama `v06-postgres-excel-onedrive`, PR #2 en borrador. Código verificado `758f629108a6615a4ba1996951440166919c6c3f`, despliegue aislado `dep-dbn9vnvf3r2c7381ni5g` Live. Despliegue anterior de lotes `ca8799a` también alcanzó Live. AutoDeploy desactivado. La portada mantiene el aviso de demostración.
