@@ -97,14 +97,34 @@ async function handle(req,res,url,ctx){if(!url.pathname.startsWith('/api/platfor
  if(req.method==='GET'){
  if(p==='public'){const pages=(await records(db,'page')).filter(r=>visible(r)).map(({id,title,body})=>({id,title,body}));const library=(await records(db,'resource')).filter(r=>visible(r)&&r.review==='approved').map(({id,title,description,category,format,access,download,updated,published_at,author,review_date,essential})=>({id,title,description,category,format,access,download,updated,published_at,author,review_date,essential}));const faqs=(await records(db,'faq')).filter(r=>visible(r)).sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id)).map(({id,title,body,category,order})=>({id,title,body,category,order}));json(res,200,{faqs,pages,resources:library,categories:(await records(db,'category')).filter(r=>visible(r)),plans:(await records(db,'plan')).filter(r=>visible(r)),demo:true});return true;}
  if(p==='catalogue'){administrator(user);json(res,200,{products:await require('./catalogue').list(db),categories:require('./catalogue').categories});return true;}
- if(p==='me'){if(!user)fail(401,'Inicia sesión');json(res,200,{subscriptions:await subscriptions(db,user.id),demo:true});return true;}
- if(p==='admin'){administrator(user);const all={};for(const k of ['page','resource','category','plan','kit','delivery','faq'])all[k]=await records(db,k);json(res,200,{records:all,assets:await assets(db,user),subscriptions:await subscriptions(db),metrics:await db.prepare('SELECT resource_id,action,day,count FROM platform_metrics ORDER BY day DESC LIMIT 100').all(),audit:await db.prepare('SELECT * FROM platform_audit ORDER BY created DESC LIMIT 100').all(),jobCounts:await db.prepare('SELECT state,COUNT(*) total FROM platform_jobs GROUP BY state ORDER BY state').all(),jobs:await db.prepare('SELECT id,kind,state,attempts,last_error FROM platform_jobs ORDER BY due DESC LIMIT 100').all()});return true;}
+ if(p==='me'){
+   if(!user)fail(401,'Inicia sesión');
+   const mine=await subscriptions(db,user.id);
+   const plans=new Map((await records(db,'plan')).map(plan=>[plan.id,plan]));
+   const result=mine.map(s=>({
+     id:s.id,plan_id:s.plan_id,plan_title:plans.get(s.plan_id)?.title||'Plan anual',benefits:plans.get(s.plan_id)?.benefits||'',
+     state:s.state,access:s.access,ends:s.ends,auto_renew:false,
+     terms:s.terms.map(t=>({transaction_id:t.transaction_id,starts:t.starts,ends:t.ends,confirmed:t.confirmed,amount:t.amount,currency:t.currency,refunded:!!t.refunded}))
+   }));
+   json(res,200,{subscriptions:result,demo:true});return true;
+ }
+ if(p==='admin'){administrator(user);const all={};for(const k of ['page','resource','category','plan','kit','delivery','faq'])all[k]=await records(db,k);json(res,200,{records:all,browser_customer_enabled:require('./security/demo-customer').enabled(env),assets:await assets(db,user),subscriptions:await subscriptions(db),metrics:await db.prepare('SELECT resource_id,action,day,count FROM platform_metrics ORDER BY day DESC LIMIT 100').all(),audit:await db.prepare('SELECT * FROM platform_audit ORDER BY created DESC LIMIT 100').all(),jobCounts:await db.prepare('SELECT state,COUNT(*) total FROM platform_jobs GROUP BY state ORDER BY state').all(),jobs:await db.prepare('SELECT id,kind,state,attempts,last_error FROM platform_jobs ORDER BY due DESC LIMIT 100').all()});return true;}
  if(p==='report'){const bytes=await report(db,user);res.writeHead(200,{'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Content-Disposition':'attachment; filename="VitaSafe_Ensayo_y_Suscripciones.xlsx"','Cache-Control':'no-store'});res.end(bytes);return true;}
  if(p.startsWith('resource/')){const key=p.slice(9),r=await resource(db,key,user,url.searchParams.get('preview')==='1'),file=url.searchParams.get('file'),download=url.searchParams.get('download')==='1';if(download&&!r.download&&!admin)fail(403,'Descarga no autorizada');if(file){const assetId=file==='cover'?r.cover_id:r.asset_id;const a=assetId&&await db.prepare('SELECT * FROM platform_assets WHERE id=?').get(assetId);if(!a)fail(404,'Archivo no disponible');await metric(db,key,download?'download':'view');res.setHeader('X-Frame-Options','SAMEORIGIN');res.setHeader('Content-Security-Policy',"default-src 'none'; frame-ancestors 'self'; sandbox");res.writeHead(200,{'Content-Type':a.mime,'Content-Length':a.size,'Cache-Control':'private, no-store','Content-Disposition':(download?'attachment':'inline')+'; filename="VitaSafe.'+({'application/pdf':'pdf','image/png':'png','image/jpeg':'jpg','image/webp':'webp','video/mp4':'mp4'}[a.mime])+'"'});res.end(Buffer.from(a.bytes,'base64'));}else{await metric(db,key,'read');json(res,200,r);}return true;}
  fail(404,'Ruta no encontrada');}
  administrator(user);if(req.method!=='POST')fail(405,'Método no permitido');const b=await body(req);
  if(p==='catalogue-save')json(res,200,await require('./catalogue').save(db,b,user));else if(p==='save')json(res,200,await saveRecord(db,b,user));else if(p==='editorial')json(res,200,await editorial(db,b.id,b.action,b.revision,user));else if(p==='asset')json(res,201,await asset(db,b.mime,b.base64,user));else if(p==='subscription-action')json(res,200,await changeSubscription(db,b.id,b.action,b.reason,user));else if(p==='subscription-simulate'){
- const uid='DEMO-SUB-'+crypto.createHash('sha256').update(user.id).digest('hex').slice(0,16);await db.prepare('INSERT OR IGNORE INTO users(id,email,name,password_hash,role) VALUES(?,?,?,?,?)').run(uid,uid.toLowerCase()+'@example.invalid','SUSCRIPTOR FICTICIO',require('./security/password').createPasswordHash(crypto.randomBytes(32).toString('hex')),'customer');json(res,200,await confirmSimulation(db,{userId:uid,planId:b.planId,transactionId:b.transactionId,amount:b.amount},user));
+ const fixture=require('./security/demo-customer');
+ let uid;
+ if(b.recipient==='verification' && ctx.verifyCustomerLogin===true){uid=fixture.automated.id;}
+ else if(b.recipient==='browser'){
+   if(!fixture.enabled(env))fail(409,'La cuenta de navegador aún no está configurada');
+   uid=fixture.browser.id;
+ }else if(b.recipient===undefined||b.recipient==='manual'){
+   uid='DEMO-SUB-'+crypto.createHash('sha256').update(user.id).digest('hex').slice(0,16);
+   await db.prepare('INSERT OR IGNORE INTO users(id,email,name,password_hash,role) VALUES(?,?,?,?,?)').run(uid,uid.toLowerCase()+'@example.invalid','SUSCRIPTOR FICTICIO',require('./security/password').createPasswordHash(crypto.randomBytes(32).toString('hex')),'customer');
+ }else fail(400,'Cuenta de ensayo inválida');
+ json(res,200,await confirmSimulation(db,{userId:uid,planId:b.planId,transactionId:b.transactionId,amount:b.amount},user));
  }else if(p==='queue-simulate'){const prepared=await prepareOrderJobs(db,user),count=await processJobs(db,async()=>{});await audit(db,user,'queue_simulated','jobs',{count,prepared});json(res,200,{count,prepared,simulated:true});}else fail(404,'Acción no encontrada');return true;
 }
 module.exports={TABLES,migrate,record,records,saveRecord,editorial,asset,assets,validateAsset,annualEnd,subscriptionState,subscriptions,premium,resource,confirmSimulation,changeSubscription,processJobs,prepareOrderJobs,queue,report,handle};
