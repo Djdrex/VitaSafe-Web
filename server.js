@@ -22,6 +22,8 @@ const PORT = Number(environment.PORT || 3000),
   ROOT = __dirname;
 const db = options.database || (await openDatabase(environment, options));
 if(environment.VITASAFE_TEST_ENV==='true'){await require('./src/commerce/core').migrate(db);await require('./src/platform').migrate(db);}
+const demoCustomer=require('./src/security/demo-customer');
+await demoCustomer.setup(db,environment);
 const defaults = {
   brand: 'VitaSafe',
   tagline: 'Prepárate hoy, vive más tranquilo',
@@ -125,7 +127,10 @@ async function admin(req) {
 async function sessionUser(req) {
   const c = (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith('vs_session='));
   if (!c) return null;
-  return (await db.prepare('SELECT u.id,u.email,u.name,u.role FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>?').get(hash(c.split('=')[1]), Date.now())) || null;
+  const user=(await db.prepare('SELECT u.id,u.email,u.name,u.role FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>?').get(hash(c.split('=')[1]), Date.now())) || null;
+  if(demoCustomer.matches(user,demoCustomer.browser) && !demoCustomer.enabled(environment))return null;
+  if(demoCustomer.matches(user,demoCustomer.automated) && !(DEMO_MODE && environment.VITASAFE_TEST_ENV==='true' && options.verifyCustomerLogin===true))return null;
+  return user;
 }
 async function customer(req) {
   return await sessionUser(req);
@@ -227,7 +232,7 @@ async function api(req, res, u) {
     isAdmin = await admin(req),
     priv = s.private_mode === 'true';
   if (m !== 'GET') checkOrigin(req);
-  if (await require('./src/platform').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
+  if (await require('./src/platform').handle(req,res,u,{db,verifyCustomerLogin:options.verifyCustomerLogin===true,user:await sessionUser(req),environment,body,json,fail})) return;
   if (await require('./src/commerce/http').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
   if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
   if (p === '/api/health') return json(res, 200, {
@@ -277,7 +282,11 @@ async function api(req, res, u) {
       password = String(b.password || '');
     const user = await db.prepare('SELECT * FROM users WHERE email=?').get(email);
     if (!user || !verifyPassword(password, user.password_hash)) fail(401, 'Correo o contraseña incorrectos');
-    if (DEMO_MODE && user.role !== 'admin') fail(403, 'Cuentas de clientes deshabilitadas en demostración');
+    if ((DEMO_MODE || demoCustomer.matches(user,demoCustomer.browser) || demoCustomer.matches(user,demoCustomer.automated)) && user.role !== 'admin') {
+      const browserAllowed=demoCustomer.enabled(environment) && demoCustomer.matches(user,demoCustomer.browser);
+      const privateRun=DEMO_MODE && environment.VITASAFE_TEST_ENV==='true' && options.verifyCustomerLogin===true && demoCustomer.matches(user,demoCustomer.automated);
+      if(!browserAllowed && !privateRun) fail(403,'Cuentas de clientes deshabilitadas en demostración');
+    }
     const t = token();
     await db.prepare('INSERT INTO sessions(token_hash,user_id,expires) VALUES(?,?,?)').run(hash(t), user.id, Date.now() + 8 * 3600000);
     res.setHeader('Set-Cookie', `vs_session=${t}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800${environment.COOKIE_SECURE === 'true' ? '; Secure' : ''}`);
@@ -343,6 +352,7 @@ async function api(req, res, u) {
     settings: publicSettings(s),
     demo_mode: DEMO_MODE,
     catalogue_editor: DEMO_MODE && environment.VITASAFE_TEST_ENV==='true',
+    customer_session:(await sessionUser(req))?.role==='customer',
     admin: isAdmin,
     ready_issues: isAdmin ? await ensureReady(s) : undefined
   });
