@@ -1,3 +1,25 @@
+# 8 de noviembre de 2026 · Ensayo visual Premium y continuidad
+
+Servicio aislado en código 2c93c52, Live según Render; 59/59 corresponde a la verificación anterior. Rama v06-postgres-excel-onedrive, PR #2 en borrador, autoDeploy desactivado. Esta revisión no lanzó compilación, despliegue ni la suite comercial. El servicio tiene un verificador automático en el comando de arranque, incluso al despertar.
+
+## Resultado observado
+
+- BrowserAuth envió un inicio de sesión legítimo y la tienda mostró Mi panel, Datos y Excel y el centro de operaciones. La identidad obtenida fue administrativa. No se consultaron contraseñas, valores de entorno, hashes ni cookies.
+- Una segunda ventana llegó a mostrar Iniciar sesión mientras cargaba. Al completar la inicialización mostró también Mi panel. Las ventanas observadas comparten la sesión: descartar la impresión inicial de aislamiento. No registrar un segundo inicio del cliente sobre la sesión del administrador como prueba de dos perfiles.
+- El selector Cuenta de ensayo del administrador en el servicio activo ofreció únicamente «Suscriptor ficticio del panel». La opción «Cliente de navegador» que requiere el ensayo estuvo ausente. El propietario confirmó que guardó VITASAFE_TEST_CUSTOMER_PASSWORD. En 2c93c52 el selector depende de la configuración efectiva del proceso, el modo aislado y las condiciones de la clave (16–256 caracteres y distinta de la administrativa). La interfaz no distingue la causa. La última publicación Live identificada corresponde al 7 de noviembre. No se puede deducir que la contraseña sea incorrecta.
+- No se confirmó login de premium-ensayo@example.invalid, consulta de su suscripción, acceso al archivo, descarga ni 403 tras revocación desde el navegador. No se activó ni revocó ninguna membresía manual. Los resultados HTTP del 7/11 se conservan como evidencia independiente. Una consulta de solo lectura del conector a PostgreSQL quedó bloqueada por su lista externa vacía; se conservó la red privada.
+- Siguiente paso: verificar en Render, con el propietario, si el cambio guardado quedó pendiente de aplicar y si cumple las condiciones, sin revelar su valor. Para evitar repetir ensayos históricos, decidir primero cómo aplicar la configuración sin arrancar automáticamente la batería que genera operaciones ficticias (comando actual: node scripts/verify-isolated.js && npm start). Antes de activar Premium, exigir que el selector ofrezca Cliente de navegador y que dos perfiles tras recarga muestren respectivamente Mi panel y Mi cuenta. Si Work comparte sesión, usar una ventana privada real en un segundo navegador/dispositivo con el propietario. Seguir docs/ENSAYO_CLIENTE_PREMIUM.md solo con el destinatario de navegador.
+
+## Revisión de los pendientes
+
+- Accesibilidad: prueba de teclado en la bolsa vacía de escritorio; después de Tab el foco quedó fuera del diálogo y Escape no lo cerró. Corregir foco inicial, contención, Escape y retorno al botón que abrió el diálogo. El botón móvil de menú contiene el símbolo ☰ y su controlador alterna una clase; completar nombre accesible y estado aria-expanded. Revalidar por teclado y lector de pantalla.
+- Móvil: ancho observado 1348 píxeles CSS, sin desbordamiento horizontal a ese ancho. El atajo de zoom no redujo la anchura efectiva. Pendiente prueba a 360/390 y 768 píxeles, en orientación vertical y horizontal, de login, suscripción, visor y descarga. No se probó dispositivo físico.
+- Recuperación: el código revisado dispone de login y cierre de sesión, pero falta el recorrido de solicitud y canje de recuperación. Preparar respuesta uniforme, token aleatorio de un uso y corta caducidad, almacenamiento de su hash, límite de intentos e invalidación de sesiones. Probar entrega con transporte simulado antes de autorizar correo.
+- Configuración comercial: ya existe editor de datos comerciales y controles de publicación en modo de pruebas. Pendientes datos empresariales aprobados, tarifas y horarios definitivos, precios, políticas, comprobantes y prueba final de permisos. Mantener las operaciones reales bloqueadas.
+- El panel Datos y Excel indicó que falta la clave de respaldo y que la automatización está desactivada. Plan de continuidad en docs/CONTINUIDAD_POSTGRES_NOVIEMBRE.md. Render confirmó PostgreSQL 18 Free disponible en Oregon y vencimiento el 24/11/2026 a las 00:28:56 de Lima. Propuesta: aprobar destino y presupuesto antes del 10/11, copia externa verificada para el 12/11, restauración separada el 16/11, validación el 19/11 y corte condicionado el 21/11. Falta aprobación de infraestructura, presupuesto, destino privado externo, custodia de clave, retención y objetivo de recuperación. No se creó ni contrató infraestructura; la copia externa y restauración remota siguen pendientes.
+
+---
+
 # 7 de noviembre de 2026 · Cliente Premium y revocación
 
 Rama `v06-postgres-excel-onedrive`, PR #2 en borrador. Código desplegado `2c93c520c51c5b00fe4f4d42800ec9ddf91bdd11`, servicio aislado Live, despliegue `dep-dbnl4eh5efls73bl8pkg`. El commit de este informe es posterior al código desplegado.
