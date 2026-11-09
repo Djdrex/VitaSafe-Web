@@ -1,3 +1,9 @@
+# 9 de noviembre de 2026 · Accesibilidad y continuidad de PostgreSQL
+
+En la rama v06-postgres-excel-onedrive del PR #2 se corrigieron el foco inicial y el retorno al control de origen en diálogos, el recorrido con Tab y Mayús+Tab, el cierre con Escape y el estado accesible del menú móvil. La prueba local `node --test tests/v1-accessibility.test.js` aprobó 3 de 3 casos con un DOM simulado. La cifra histórica de 59/59 corresponde al código desplegado 2c93c52. Falta validar las correcciones con navegador, teclado y lector de pantalla en el entorno aislado. El ensayo Premium con dos perfiles sigue pendiente según la entrada del 8/11.
+
+El propietario eligió conservar la web Free y actualizar en su lugar la base existente. El plan de continuidad detalla los hitos y el desglose de costos. US$6 al mes es una referencia del propietario. Quedan pendientes el precio final de Render, el destino del respaldo cifrado y la restauración de una copia externa en PostgreSQL 18 vacío. Próximo paso para el 10/11: recoger el desglose del panel sin confirmar la compra y acordar la ubicación privada de la copia. Presentar el total y el ensayo de recuperación antes de solicitar autorización para contratar. Esta revisión no despliega, fusiona ni modifica servicios.
+
 # 8 de noviembre de 2026 · Ensayo visual Premium y continuidad
 
 Servicio aislado en código 2c93c52, Live según Render; 59/59 corresponde a la verificación anterior. Rama v06-postgres-excel-onedrive, PR #2 en borrador, autoDeploy desactivado. Esta revisión no lanzó compilación, despliegue ni la suite comercial. El servicio tiene un verificador automático en el comando de arranque, incluso al despertar.
