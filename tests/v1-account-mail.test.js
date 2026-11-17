@@ -28,7 +28,7 @@ test('simulated customer mailbox verifies ownership, consumes reset once and rev
       if (purpose==='verify') {
         const me=await (await fetch(base+'me',{headers:{cookie}})).json();
         for (const [id,owner] of [['mine',me.user.id],['other','another-customer']]) {
-          await db.prepare("INSERT INTO orders(id,secret_hash,customer,phone,delivery_type,requested_date,items,subtotal,total) VALUES(?,?,?,?,?,?,?,?,?)").run(id,'unused','Ficticio','0','pickup','2026-11-16','[]',100,100);
+          await db.prepare("INSERT INTO orders(id,secret_hash,customer,phone,delivery_type,requested_date,payment_method,items,subtotal,total) VALUES(?,?,?,?,?,?,?,?,?,?)").run(id,'unused','Ficticio','0','pickup','2026-11-16','simulado','[]',100,100);
           await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?)').run('order-owner:'+id,owner);
         }
         const history=await fetch(base+'orders?user_id=another-customer',{headers:{cookie}});
