@@ -1,6 +1,6 @@
 # Comprobación del cliente Premium en navegador
 
-Usar exclusivamente vitasafe-v06-pr2-test, con DEMO_MODE=true, VITASAFE_TEST_ENV=true y autoDeploy desactivado. Las pruebas HTTP del arranque se ejecutan en una instancia local del servidor dentro de Render, con PostgreSQL interno. El verificador inicia sesión por contraseña y comprueba los bytes del archivo, el bloqueo anónimo y el rechazo posterior a revocar usando la misma sesión. Su cuenta y plan son distintos del ensayo manual.
+Usar exclusivamente vitasafe-v06-pr2-test, con DEMO_MODE=true, VITASAFE_TEST_ENV=true y autoDeploy desactivado. Desde el 16/11 el arranque comprueba el catálogo mediante una transacción PostgreSQL de solo lectura. El ensayo automatizado HTTP pertenece a la suite con una base desechable y usa una cuenta distinta de la prueba manual.
 
 ## Habilitar una cuenta de cliente ficticia
 
