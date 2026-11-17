@@ -19,3 +19,11 @@ body[data-demo="true"] #adminView{top:var(--demo-banner-height,60px)}.adminContr
 :where(button,a,input,select,textarea,summary):focus-visible{outline:3px solid #1467a8;outline-offset:2px}
 
 #dialogStatus:empty{margin:0}
+
+.top { top: var(--demo-banner-height, 0px); }
+.productInfo p { color: #54635a; }
+html[data-theme="dark"] .productInfo p { color: #c6d6cc; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { transition: none; }
+}
