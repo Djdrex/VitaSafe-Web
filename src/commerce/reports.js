@@ -21,8 +21,36 @@ async function workbook(db,withDelivery=false){const d=await summary(db,withDeli
  const detail=sheet('Detalle pedidos',['ID pedido','ID producto','Cantidad','Precio (S/)','Importe (S/)'],d.lines.map(l=>[l.order_id,l.product_id,l.quantity,l.price/100,l.quantity*l.price/100]));detail.getColumn(4).numFmt=detail.getColumn(5).numFmt=money;for(let i=0;i<d.lines.length;i++)detail.getCell(i+5,5).value={formula:`C${i+5}*D${i+5}`,result:d.lines[i].quantity*d.lines[i].price/100};
  sheet('Inventario',['ID técnico','Producto ficticio','Disponible','Umbral','Alerta'],d.products.map(p=>[p.id,p.name,p.stock,p.low_stock,p.stock<=p.low_stock?'Stock bajo':'Disponible']));
  sheet('Movimientos',['Fecha UTC','Producto','Variación','Motivo','Referencia','Responsable'],d.movements.map(m=>[m.created_at,m.product_id,m.delta,labels[m.reason]||m.reason,m.reference,m.actor]));
- const ranking=d.products.map(p=>{const l=d.lines.filter(l=>l.product_id===p.id&&paid.has(l.order_id));return [p.id,p.name,l.reduce((s,l)=>s+l.quantity,0),l.reduce((s,l)=>s+l.quantity*l.price/100,0)]}).sort((a,b)=>b[2]-a[2]);sheet('Más vendidos',['ID técnico','Producto','Unidades pagadas','Ventas (S/)'],ranking).getColumn(4).numFmt=money;
- for(const [type,title] of [['day','Ventas diarias'],['week','Ventas semanales'],['month','Ventas mensuales']]){const map=new Map();for(const o of d.orders){const k=bucket(o.created_at,type),r=map.get(k)||[k,0,0];r[1]++;if(paid.has(o.id))r[2]+=o.total/100;map.set(k,r)}const sh=sheet(title,['Periodo Perú','Pedidos','Ingresos (S/)','Variación vs anterior'],[...map.values()].map((r,i,all)=>[...r,i&&all[i-1][2]?(r[2]-all[i-1][2])/all[i-1][2]:null]));sh.getColumn(3).numFmt=money;sh.getColumn(4).numFmt='0.0%';for(let i=1;i<map.size;i++)sh.getCell(i+5,4).value={formula:`IFERROR(C${i+5}/C${i+4}-1,0)`,result:[...map.values()][i-1][2]?([...map.values()][i][2]/[...map.values()][i-1][2])-1:0};}
- sheet('Guía',['Tema','Descripción'],[['Alcance','Reporte operativo de ensayo. El Excel de 15 hojas aprobado para revisión no se modifica.'],['Comparación','La variación compara periodos con datos; pueden ser incompletos. No equivale a periodos de igual duración.'],['Compatibilidad','Las cuatro exportaciones técnicas v0.6 mantienen encabezados y rutas. No importar este informe analítico.'],['Pendiente','Gráficos y comparación editable entre periodos equivalentes del Excel de demostración aún no se generan aquí.'],['Notificaciones','Solo bandeja simulada. No se envían correos ni mensajes externos.'],['Interpretación',`Ensayo: ${d.orders.length} pedidos; ${d.low_stock.length} productos bajo umbral. No representa ventas reales.`]]).getColumn(2).width=100;
+ const totalsByProduct=new Map();
+ for(const line of d.lines){
+   if(!paid.has(line.order_id))continue;
+   const total=totalsByProduct.get(line.product_id) || {units:0,cents:0};
+   total.units+=line.quantity;
+   total.cents+=line.quantity*line.price;
+   totalsByProduct.set(line.product_id,total);
+ }
+ const ranking=d.products.map(product=>{
+   const total=totalsByProduct.get(product.id);
+   return [product.id,product.name,total?.units||0,(total?.cents||0)/100];
+ }).sort((a,b)=>b[2]-a[2]);
+ sheet('Más vendidos',['ID técnico','Producto','Unidades pagadas','Ventas (S/)'],ranking).getColumn(4).numFmt=money;
+ for(const [type,title] of [['day','Ventas diarias'],['week','Ventas semanales'],['month','Ventas mensuales']]){
+   const buckets=new Map();
+   for(const order of d.orders){
+     const period=bucket(order.created_at,type);
+     const row=buckets.get(period)||[period,0,0];
+     row[1]++;
+     if(paid.has(order.id))row[2]+=order.total;
+     buckets.set(period,row);
+   }
+   const rows=[...buckets.values()].sort(([a],[b])=>a.localeCompare(b));
+   const sh=sheet(title,['Periodo Perú','Pedidos','Ingresos (S/)','Variación vs anterior'],rows.map(([period,count,cents])=>[period,count,cents/100,null]));
+   sh.getColumn(3).numFmt=money;sh.getColumn(4).numFmt='0.0%';
+   for(let i=1;i<rows.length;i++){
+     const row=i+5,previous=rows[i-1][2];
+     sh.getCell(row,4).value={formula:`IF(C${row-1}=0,"",C${row}/C${row-1}-1)`,result:previous?rows[i][2]/previous-1:''};
+   }
+ }
+ sheet('Guía',['Tema','Descripción'],[['Alcance','Reporte operativo de ensayo. El Excel de 15 hojas aprobado para revisión no se modifica.'],['Comparación','La variación compara periodos con datos; pueden ser incompletos. La variación queda vacía cuando el ingreso anterior es cero. No equivale a periodos de igual duración.'],['Compatibilidad','Las cuatro exportaciones técnicas v0.6 mantienen encabezados y rutas. No importar este informe analítico.'],['Pendiente','Gráficos y comparación editable entre periodos equivalentes del Excel de demostración aún no se generan aquí.'],['Notificaciones','Solo bandeja simulada. No se envían correos ni mensajes externos.'],['Interpretación',`Ensayo: ${d.orders.length} pedidos; ${d.low_stock.length} productos bajo umbral. No representa ventas reales.`]]).getColumn(2).width=100;
  return Buffer.from(await w.xlsx.writeBuffer());}
 module.exports={summary,workbook,bucket};
