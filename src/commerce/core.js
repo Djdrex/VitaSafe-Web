@@ -29,14 +29,18 @@ async function fixtures(db,namespace){if(!/^DEMO-[a-zA-Z0-9-]{1,60}$/.test(names
  const customer=namespace+'-customer';await db.prepare('INSERT OR IGNORE INTO commerce_customers(id,name,email,address,fictional) VALUES(?,?,?,?,1)').run(customer,'CLIENTE FICTICIO',namespace.toLowerCase()+'@example.invalid','Dirección ficticia sin entrega');return {products,customer};
 });}
 function normalize(items){if(!Array.isArray(items)||!items.length||items.length>30)fail(400,'Carrito inválido');const map=new Map();for(const x of items){if(!x||typeof x.id!=='string'||!Number.isSafeInteger(x.qty)||x.qty<1||x.qty>30)fail(400,'Cantidad inválida');map.set(x.id,(map.get(x.id)||0)+x.qty)}const rows=[...map].sort(([a],[b])=>a.localeCompare(b)).map(([id,qty])=>({id,qty}));if(rows.some(x=>x.qty>30))fail(400,'Cantidad acumulada inválida');return rows;}
-async function createOrder(db,{customer,items,key,catalogue=false,delivery=null},actor){if(!actor||!['admin','customer'].includes(actor.role)||actor.role==='customer'&&actor.id!==customer)fail(403,'Sin permiso');if(typeof key!=='string'||!/^[A-Za-z0-9-]{12,120}$/.test(key))fail(400,'Identificador de compra inválido');items=normalize(items);const selected=require('./delivery').selection(delivery);
- if(selected&&(!catalogue||actor.role!=='admin'))fail(403,'Delivery solo para el ensayo del catálogo');
+async function createOrder(db,{customer,items,key,catalogue=false,delivery=null,buyer=false},actor){if(!actor||!['admin','customer'].includes(actor.role)||actor.role==='customer'&&actor.id!==customer)fail(403,'Sin permiso');if(typeof key!=='string'||!/^[A-Za-z0-9-]{12,120}$/.test(key))fail(400,'Identificador de compra inválido');items=normalize(items);const selected=require('./delivery').selection(delivery);
+ if(selected&&(!catalogue||actor.role!=='admin'&&!buyer))fail(403,'Delivery solo para el ensayo del catálogo');
  const fingerprint=hash(catalogue?{customer,items,catalogue:true,...(selected?{delivery:selected}:{})}:{customer,items});
  return db.transaction(async()=>{
  // PostgreSQL lock makes concurrent retries return the same order; sorted stock locks avoid deadlocks.
  if(db.kind!=='sqlite')await db.prepare('SELECT pg_advisory_xact_lock(hashtext(?))').get('checkout:'+key);
  const previous=await db.prepare('SELECT * FROM commerce_orders WHERE request_key=?').get(key);if(previous){if(previous.request_hash!==fingerprint)fail(409,'La solicitud cambió; usa otro identificador');return {...previous,reused:true}}
- if(catalogue){if(actor.role!=='admin')fail(403,'Ensayo de catálogo solo administrativo');const linked=[];for(const item of items)linked.push({id:await require('./catalogue-link').ensure(db,item.id),qty:item.qty});items=linked.sort((a,b)=>a.id.localeCompare(b.id));}
+ if(buyer){
+   if(!catalogue||actor.role!=='customer'||actor.id!==customer||!/^DEMO-BUYER-[a-f0-9]{64}$/.test(customer))fail(403,'Titular de ensayo inválido');
+   await db.prepare('INSERT OR IGNORE INTO commerce_customers(id,name,email,address,fictional) VALUES(?,?,?,?,1)').run(customer,'Comprador ficticio',customer+'@example.invalid','Sin entrega real');
+ }
+ if(catalogue){if(actor.role!=='admin'&&!buyer)fail(403,'Ensayo de catálogo solo administrativo');const linked=[];for(const item of items)linked.push({id:await require('./catalogue-link').ensure(db,item.id),qty:item.qty});items=linked.sort((a,b)=>a.id.localeCompare(b.id));}
  if(!(await db.prepare('SELECT id FROM commerce_customers WHERE id=? AND fictional=1').get(customer)))fail(400,'Cliente de ensayo inexistente');
  const deliveryQuote=selected?await require('./delivery').quote(db,selected):null;
  const lines=[];let total=deliveryQuote?.fee??0;for(const item of items){let p=await db.prepare('SELECT * FROM commerce_products WHERE id=? FOR UPDATE').get(item.id);if(p&&p.id.startsWith('DEMO-CAT-'))p=await require('./catalogue-link').refresh(db,p);if(!p||p.fictional!==1)fail(400,'Producto de ensayo inexistente');if(p.stock<item.qty)fail(409,'Stock insuficiente');total+=p.price*item.qty;lines.push({...item,price:p.price})}if(!Number.isSafeInteger(total)||total>10000000)fail(400,'Importe excedido');
