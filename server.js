@@ -234,6 +234,7 @@ async function api(req, res, u) {
     priv = s.private_mode === 'true';
   if (m !== 'GET') checkOrigin(req);
   if (await require('./src/platform').handle(req,res,u,{db,verifyCustomerLogin:options.verifyCustomerLogin===true,user:await sessionUser(req),environment,body,json,fail})) return;
+  if (await require('./src/commerce/buyer').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail,throttle})) return;
   if (await require('./src/commerce/http').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
   if (m === 'POST' && ['/api/account/mail/request','/api/account/mail/confirm'].includes(p)) {
     if (DEMO_MODE) fail(403,'La cuenta de ensayo se gestiona en el servicio aislado.');
@@ -380,7 +381,7 @@ async function api(req, res, u) {
   });
   if (p === '/api/products' && m === 'GET') {
     if (priv && !isAdmin && !DEMO_MODE) fail(403, 'Tienda privada');
-    const rows = isAdmin && environment.VITASAFE_TEST_ENV==='true' ? await require('./src/catalogue').list(db) : await db.prepare(isAdmin ? 'SELECT * FROM products ORDER BY rowid' : 'SELECT id,name,slug,description,category,price,stock,image,contents,active FROM products WHERE active=1 ORDER BY rowid').all();
+    const rows = isAdmin && environment.VITASAFE_TEST_ENV==='true' ? await require('./src/catalogue').list(db) : DEMO_MODE && environment.VITASAFE_TEST_ENV==='true' ? await require('./src/catalogue').published(db) : await db.prepare(isAdmin ? 'SELECT * FROM products ORDER BY rowid' : 'SELECT id,name,slug,description,category,price,stock,image,contents,active FROM products WHERE active=1 ORDER BY rowid').all();
     const products = DEMO_MODE && environment.VITASAFE_TEST_ENV==='true'
       ? await require('./src/commerce/lots').withAvailability(db,rows,isAdmin) : rows;
     return json(res,200,{products});
@@ -781,6 +782,10 @@ const handler = async (req, res) => {
     });
   });
 server.requestTimeout=30000;server.headersTimeout=15000;
+if(options.startWorkers && DEMO_MODE && environment.VITASAFE_TEST_ENV==='true'){
+  const timer=setInterval(()=>require('./src/commerce/buyer').expireBuyers(db).catch(()=>console.error('demo_expiry_failed')),60000);
+  timer.unref();server.on('close',()=>clearInterval(timer));
+}
 if(options.startWorkers){const stop=startSyncWorker(db,environment);server.on('close',stop)}
 return {server,db,ensureReady};
 }
