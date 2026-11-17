@@ -22,6 +22,7 @@ const PORT = Number(environment.PORT || 3000),
   ROOT = __dirname;
 const db = options.database || (await openDatabase(environment, options));
 if(environment.VITASAFE_TEST_ENV==='true'){await require('./src/commerce/core').migrate(db);await require('./src/platform').migrate(db);}
+const accountMail = require('./src/security/account-mail').accountMail(db,options.simulatedMail);
 const demoCustomer=require('./src/security/demo-customer');
 await demoCustomer.setup(db,environment);
 const defaults = {
@@ -61,8 +62,8 @@ const safeEq = (a, b) => {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 const loginAttempts = new Map();
-function throttle(req) {
-  const key = req.socket.remoteAddress || 'unknown',
+function throttle(req, scope='login') {
+  const key = scope + ':' + (req.socket.remoteAddress || 'unknown'),
     now = Date.now();
   let entry = loginAttempts.get(key);
   if (!entry || now - entry.start > 15 * 60_000) entry = {
@@ -234,6 +235,19 @@ async function api(req, res, u) {
   if (m !== 'GET') checkOrigin(req);
   if (await require('./src/platform').handle(req,res,u,{db,verifyCustomerLogin:options.verifyCustomerLogin===true,user:await sessionUser(req),environment,body,json,fail})) return;
   if (await require('./src/commerce/http').handle(req,res,u,{db,user:await sessionUser(req),environment,body,json,fail})) return;
+  if (m === 'POST' && ['/api/account/mail/request','/api/account/mail/confirm'].includes(p)) {
+    if (DEMO_MODE) fail(403,'La cuenta de ensayo se gestiona en el servicio aislado.');
+    throttle(req,'account-mail');
+    const b = await body(req);
+    const email = String(b.email || '').trim().toLowerCase();
+    if (email.length > 150) fail(400,'Correo inválido');
+    if (p.endsWith('/request')) {
+      await accountMail.issue(email,b.purpose);
+      return json(res,202,{ok:true});
+    }
+    await accountMail.confirm(email,b.purpose,b.code,b.password);
+    return json(res,200,{ok:true});
+  }
   if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
   if (p === '/api/health') return json(res, 200, {
     ok: true,
@@ -290,7 +304,7 @@ async function api(req, res, u) {
     const t = token();
     await db.prepare('INSERT INTO sessions(token_hash,user_id,expires) VALUES(?,?,?)').run(hash(t), user.id, Date.now() + 8 * 3600000);
     res.setHeader('Set-Cookie', `vs_session=${t}; HttpOnly; SameSite=Lax; Path=/; Max-Age=28800${environment.COOKIE_SECURE === 'true' ? '; Secure' : ''}`);
-    loginAttempts.delete(req.socket.remoteAddress || 'unknown');
+    loginAttempts.delete('login:' + (req.socket.remoteAddress || 'unknown'));
     return json(res, 200, {
       ok: true,
       user: {
@@ -304,7 +318,14 @@ async function api(req, res, u) {
   if (p === '/api/account/me' && m === 'GET') return json(res, 200, {
     user: await sessionUser(req)
   });
-  if (p === '/api/account/orders' && m === 'GET') fail(403, 'Historial disponible después de verificar el correo; usa el enlace privado del pedido');
+  if (p === '/api/account/orders' && m === 'GET') {
+    const user = await sessionUser(req);
+    if (!user || user.role !== 'customer') fail(403,'Inicia sesión con una cuenta de cliente');
+    const verified = await db.prepare('SELECT v FROM sync_state WHERE k=?').get('verified-email:'+user.id);
+    if (verified?.v !== user.email) fail(403,'Verifica tu correo para consultar el historial');
+    const orders = await db.prepare("SELECT o.id,o.status,o.total,o.created_at FROM orders o JOIN sync_state owner ON owner.k='order-owner:' || o.id WHERE owner.v=? ORDER BY o.created_at DESC,o.id").all(user.id);
+    return json(res,200,{orders});
+  }
   if (p === '/api/auth/status' && m === 'GET') return json(res, 200, {
     admin: isAdmin,
     user: await sessionUser(req)
@@ -351,6 +372,7 @@ async function api(req, res, u) {
   if (p === '/api/config' && m === 'GET') return json(res, 200, {
     settings: publicSettings(s),
     demo_mode: DEMO_MODE,
+    simulated_account_mail: !DEMO_MODE && typeof options.simulatedMail === 'function',
     catalogue_editor: DEMO_MODE && environment.VITASAFE_TEST_ENV==='true',
     customer_session:(await sessionUser(req))?.role==='customer',
     admin: isAdmin,
@@ -425,6 +447,9 @@ async function api(req, res, u) {
         await db.prepare('INSERT INTO inventory_events(product_id,delta,reason,ref) VALUES(?,?,?,?)').run(x.id, -x.qty, 'order_reserved', id);
       }
       await db.prepare(`INSERT INTO orders(id,secret_hash,customer,email,phone,address,district,reference,delivery_type,requested_date,payment_method,items,subtotal,total,source,notes,requested_time) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, hash(secret), name, email, phone, address, district, validateString(b.reference || '', 200), type, requested, validateString(b.payment_method || 'manual', 30), JSON.stringify(resolved), subtotal, subtotal, validateString(b.source || 'web', 30), validateString(b.notes || '', 500), requestedTime);
+      const buyer = await sessionUser(req);
+      if (buyer?.role === 'customer') await db.prepare('INSERT INTO sync_state(k,v) VALUES(?,?)').run('order-owner:'+id,buyer.id);
+
       await db.prepare('INSERT INTO idempotency(k,order_id) VALUES(?,?)').run(idem, id);
       await db.prepare('INSERT INTO order_events(order_id,kind,detail) VALUES(?,?,?)').run(id, 'created', 'Solicitud registrada');
       await audit('order_created', id);
