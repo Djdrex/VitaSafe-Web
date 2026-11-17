@@ -103,5 +103,28 @@ async function verifyIsolated(db,env,onStage=()=>{}){
   return report;
  }finally{await new Promise(r=>app.server.close(r));if(customerCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(customerCookie.slice(11)));if(adminCookie)await db.prepare('DELETE FROM sessions WHERE token_hash=?').run(sha(adminCookie.slice(11)))}
 }
-if(require.main===module){const {openDatabase}=require('../src/db/database');(async()=>{if(!process.env.DATABASE_URL)throw Error('Secure configuration required');const db=await openDatabase(process.env);try{console.log('isolated_verification',JSON.stringify(await verifyIsolated(db,process.env,stage=>console.log('isolated_stage',stage))))}finally{await db.close()}})().catch(error=>{const location=String(error.stack||'').split('\n').map(line=>line.match(/(?:verify-[a-z-]+|catalogue-link|core|platform)\.js:\d+:\d+/)?.[0]).filter(Boolean);console.error('isolated_failure',JSON.stringify({locations:location.slice(0,3)}));console.error('Isolated verification failed; inspect secure configuration and test results. No credentials logged.');process.exitCode=1})}
-module.exports={verifyIsolated};
+// Render invokes this entry point at every start. The historical fixture suite
+// remains available to tests through verifyIsolated, never through this CLI.
+async function verifyStartup(env, Client = require('pg').Client) {
+  if (env.DEMO_MODE !== 'true' || env.VITASAFE_TEST_ENV !== 'true')
+    throw Error('Expected the isolated demo');
+  if (new URL(env.DATABASE_URL).hostname !== 'dpg-dbep767avr4c73bll9u0-a')
+    throw Error('Unexpected database');
+  const client = new Client({connectionString: env.DATABASE_URL, connectionTimeoutMillis: 10000});
+  try {
+    await client.connect();
+    await client.query('BEGIN READ ONLY');
+    await client.query('SELECT id FROM vitasafe_stage_app.products LIMIT 1');
+    await client.query('COMMIT');
+  } finally {
+    await client.end();
+  }
+}
+if (require.main === module) {
+  verifyStartup(process.env).then(() => console.log('Isolated database read check passed.'))
+    .catch(() => {
+      console.error('Isolated database read check failed. Verify secure configuration.');
+      process.exitCode = 1;
+    });
+}
+module.exports = {verifyIsolated, verifyStartup};
