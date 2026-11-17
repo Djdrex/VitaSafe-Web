@@ -698,6 +698,14 @@ async function api(req, res, u) {
       return json(res, 201, {id});
     }
     if (p === '/api/admin/stats' && m === 'GET') return json(res, 200, {
+      ...(DEMO_MODE && environment.VITASAFE_TEST_ENV==='true' ? {
+        simulation: await db.prepare(`SELECT
+          (SELECT COUNT(*) FROM commerce_orders) AS orders,
+          (SELECT COUNT(*) FROM commerce_movements) AS movements,
+          (SELECT COUNT(*) FROM users WHERE role='customer') AS customers,
+          (SELECT COUNT(DISTINCT s.user_id) FROM platform_subscriptions s JOIN platform_terms t ON s.id=t.subscription_id
+            WHERE s.status NOT IN ('suspended','refunded') AND t.refunded=0 AND t.starts<=? AND t.ends>?) AS premium`).get(Date.now(),Date.now())
+      } : {}),
       products: (await db.prepare('SELECT COUNT(*) n FROM products').get()).n,
       orders: (await db.prepare('SELECT COUNT(*) n FROM orders').get()).n,
       tickets: (await db.prepare('SELECT COUNT(*) n FROM tickets').get()).n,
