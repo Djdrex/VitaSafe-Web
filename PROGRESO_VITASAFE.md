@@ -1,3 +1,11 @@
+## Continuación del 18/11/2026 · acceso y bloqueo confirmados en el panel
+
+- Se retomó el código dd189e9 sin reconstruir módulos. Render conserva rama de pruebas, plan Free y autoDeploy no.
+- Dos solicitudes seguras de inicio de sesión abrieron el panel ADMIN/Mi panel; no se vieron ni modificaron contraseñas. No constituyen evidencia de acceso del cliente premium-ensayo@example.invalid. No repetir solicitudes hasta disponer de la identidad ficticia correcta.
+- Datos y Excel confirma que falta configurar la clave de respaldo y la aplicación Microsoft. Autorizar Microsoft y Verificar respaldo cifrado en OneDrive están deshabilitados; automatización desactivada. No se crearon carpetas, copias remotas, pedidos ni membresías.
+- Siguiente paso: propietario configura MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, ONEDRIVE_TOKEN_KEY y VITASAFE_BACKUP_KEY directamente en el servicio aislado, según docs/RESPALDOS_ONEDRIVE_OPERACION.md, y custodia la clave fuera de OneDrive. Después se podrá solicitar consentimiento OAuth real. Para el ensayo visual de cliente debe proporcionar la cuenta ficticia mediante formulario seguro, no la administrativa.
+- No hubo cambios de código, despliegues ni nueva ejecución de suite en esta continuación. 67/67 corresponde a la evidencia previa. Restauración PostgreSQL 18 remota y recorridos visuales de cliente siguen pendientes.
+
 # 18 de noviembre de 2026 · Respaldo privado preparado y contraste corregido
 
 Continúa 0.10.0-preview; NO candidata aprobada para lanzamiento. Rama `v06-postgres-excel-onedrive`, PR #2 en borrador; main conserva `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. No se activaron ventas, pagos, correos ni sincronización automática. AutoDeploy confirmado `no`; web aislada Free. Sin gastos ni cambios de plan.
