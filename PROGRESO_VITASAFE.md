@@ -1,3 +1,40 @@
+# 17 de noviembre de 2026 · Checkout de invitado y cierre de Excel
+
+Código desplegado **9611ee2d48eaa2b2aa3dfc9018a47b4f837baf3f**, Render **Live** en `dep-dbuhsd5g1s2s73bth9c0`. Rama `v06-postgres-excel-onedrive`, PR #2 abierto en borrador. Main continúa en `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. AutoDeploy comprobado en `no` antes del despliegue manual; web Free y entorno aislado. Versión sigue 0.10.0-preview: todavía no es candidata aprobada para lanzamiento. Este documento y las evidencias se guardan en commits posteriores, sin redesplegar por cambios documentales.
+
+## Terminado y verificado en esta continuación
+
+- Se confirmó Live del despliegue anterior `c0a85dc`, con 65/65 en Render y comprobación de lectura por PostgreSQL interno. Incluye checkout aislado de invitados/clientes, titularidad por cuenta o cookie HttpOnly, idempotencia, reservas y vencimiento, y metadatos de familia/variante por SKU. Cada SKU mantiene stock y precio propios; la presentación es por fichas, no un selector de variantes dentro de una ficha.
+- Defecto reproducido por revisión: `/api/admin/simulation/state` solo listaba pedidos del administrador y las operaciones rechazaban los del nuevo checkout. Se corrigió `src/commerce/http.js` para listar/procesar pedidos `DEMO-BUYER-*`, manteniendo rol administrativo, doble condición de entorno demo/aislado y restricción al espacio ficticio. No se amplió el acceso de clientes.
+- Se amplió `tests/v1-buyer.test.js`: invitado y cliente con sesiones HTTP distintas, disponibilidad por SKU, idempotencia, autorización cruzada, listado administrativo, rechazo del pago por cliente, pago simulado repetido, preparación/envío/entrega, reembolso sin reponer inventario entregado y recepción física repetida sin duplicar stock. Prueba focal aprobada y regresión **65/65**, 0 fallos, local y compilación Render. Es integración HTTP con PGlite y pagos simulados, no sandbox bancario.
+- Inicio de sesión administrativo real mediante formulario seguro del navegador, sin ver ni cambiar la contraseña. Dashboard observado antes del nuevo pedido: 9 productos, 0 pedidos comerciales, S/0.00 de ventas verificadas, 36 pedidos ficticios, 3 cuentas cliente, 0 clientes Premium vigentes y 72 movimientos. No se comprobó un cálculo independiente de todos los KPI.
+- **Nuevo recorrido visual de invitado en Render:** se reutilizó `DEMO-BROWSER-CATALOGUE-20261030`, publicado temporalmente en pruebas. Bolsa de una unidad, total S/12.34, sin despacho ni datos personales. Pedido único `DEMO-e32d006e-3787-478c-bf6b-a84033ed643d`, confirmado como pendiente y visible en Mis pedidos ficticios. Se canceló desde la misma sesión y el sitio confirmó Cancelado. Después de volver a iniciar sesión administrativa, el stock mostró **2** y el producto quedó **despublicado**. El laboratorio administrativo encontró el mismo pedido. No se repitieron los pedidos históricos, ni se crearon membresías, ni se simuló un cobro en Render en esta continuación. Evidencias `docs/PEDIDO_INVITADO_20261117.jpg` y `docs/PANEL_PEDIDO_INVITADO_20261117.jpg`.
+- **Excel posterior a revocación descargado realmente desde navegador:** `docs/V010_EXCEL_REVOCACION_20261117.xlsx`, 43 095 bytes, SHA-256 `5a68f6ed89afcae1e5d94054fdec3f5ae250b85010b84367222db27fcf4abc8e`. ExcelJS abrió 17 hojas. Validación: 24 suscripciones, 30 transacciones únicas y reembolsadas, ninguna suscripción activa, ingresos netos de membresías S/0. La membresía histórica `9d1021af-a16c-43ac-8339-307d4c11ffa3` conserva exactamente sus siete transacciones. Se descargó ANTES del nuevo pedido invitado; no debe usarse como evidencia de ese pedido. El bloqueo de descarga no se reprodujo.
+- Render registró `pass 65`, `fail 0` y `Isolated database read check passed` después del nuevo despliegue. No se tomó una copia ni se restauró la base remota.
+
+## Pendientes técnicos y límites reales
+
+- El recorrido visual Premium con dos sesiones simultáneas sigue pendiente. La ventana privada está deshabilitada en el navegador administrado; dos pestañas normales comparten sesión y no equivalen a dos perfiles. No se creó otra membresía para repetir evidencia histórica. Hace falta un segundo perfil/navegador independiente autorizado y acceso seguro a la cuenta ficticia.
+- El checkout visual de cliente registrado y la operación de pago/entrega desde el panel están cubiertos por HTTP pero no por un ensayo visual completo de esa combinación. El invitado sí se verificó hasta cancelación, sin pagos.
+- Móvil/tablet, lector de pantalla y revisión completa de contraste no están verificados. Chromium local no pudo arrancar en la sesión anterior por restricción de sockets; ahora el navegador administrado muestra que DevTools está bloqueado. No se eludieron estas restricciones ni se presentaron como pruebas de dispositivo físico.
+- El panel confirma que falta configurar la clave del respaldo y la aplicación Microsoft. Recuperación de cuenta y verificación de correo conservan el transporte simulado probado; no hay entrega real autorizada. No se activaron OneDrive, ventas, pagos ni correos.
+- `npm audit --json` consultado en esta sesión: **0 vulnerabilidades** (0 moderadas, altas o críticas), 208 dependencias, salida 0. Evidencia `docs/NPM_AUDIT_20261117.json`. Esto no sustituye una revisión de seguridad de la aplicación. Quedan carga realista y revisión final de configuración comercial.
+
+## Continuidad de PostgreSQL y decisiones del propietario
+
+Decisión conservada: web Render Free, PostgreSQL de pago en Render, OneDrive privado para copias cifradas y clave custodiada por separado. El procedimiento está en `docs/ENSAYO_RESPALDO_ONEDRIVE.md`; no se solicita nuevamente elegir proveedor.
+
+1. Configurar `VITASAFE_BACKUP_KEY` por el canal seguro de Render y custodiarla fuera de OneDrive. No enviarla por chat. Elegir la carpeta privada y autorizar la carga manual del archivo cifrado, sin activar automatización.
+2. Antes del 24/11/2026 00:28 Lima, confirmar cotización final de actualización de la instancia existente. Referencia documental: US$6 de cómputo + US$0.30 por GB/mes, NO importe final aprobado. Revisar impuestos, almacenamiento, transferencia y retención real de respaldo en el plan elegido.
+3. Autorizar por separado una instancia temporal PostgreSQL 18 vacía, Oregon, red interna, tamaño suficiente y límite de gasto/tiempo para ensayar restauración. El procedimiento estima costo proporcional pero requiere cotización de cuenta; no se ha creado ni contratado.
+4. Descargar copia cifrada, verificar SHA y descifrado, subir manualmente a OneDrive privado, volver a descargar, restaurar solo en destino vacío separado y validar conteos, archivos, permisos y 17 hojas. La restauración automatizada local está probada; la copia externa y restauración remota todavía no.
+
+## Próximo paso exacto
+
+No repetir el pedido `DEMO-e32d006e-3787-478c-bf6b-a84033ed643d`, la descarga histórica ni membresías revocadas. Resolver primero clave y destino de respaldo para proteger la base antes del vencimiento. Continuar con un navegador independiente para `docs/ENSAYO_CLIENTE_PREMIUM.md` y el checkout de cliente. Continuar con pruebas de carga y de dispositivo cuando el entorno lo permita. Mantener main, servicio comercial, PR en borrador y autoDeploy intactos. No declarar v1.0 terminada con estos bloqueos.
+
+---
+
 # 16 de noviembre de 2026 · Ensayo de cierre técnico
 
 Rama v06-postgres-excel-onedrive, PR #2 en borrador. Versión de aplicación 0.10.0-preview. Referencia inicial 01c0d6e en GitHub y despliegue previo 2c93c52. Código desplegado bda3c85, estado Live, despliegue dep-dbtt9u56e07s73b5n5h0. La compilación en Render registró 64 pruebas aprobadas y el nuevo proceso confirmó la lectura por red interna. La web comercial quedó fuera del despliegue.
