@@ -1,0 +1,2 @@
+'use strict';
+fetch('/api/platform/public').then(r=>r.ok?r.json():null).then(d=>{const p=d?.pages.find(x=>x.id==='conoce');const section=document.getElementById('conoce');if(!p){section.hidden=true;return}document.getElementById('conoceTitle').textContent=p.title;const box=document.getElementById('conoceBody');for(const line of p.body.split('\n\n')){const paragraph=document.createElement('p');paragraph.textContent=line;box.append(paragraph)}}).catch(()=>{document.getElementById('conoce').hidden=true});

@@ -1,0 +1,53 @@
+{
+  "sheets": [
+    "Resumen",
+    "Pedidos",
+    "Detalle pedidos",
+    "Inventario",
+    "Movimientos",
+    "Más vendidos",
+    "Ventas diarias",
+    "Ventas semanales",
+    "Ventas mensuales",
+    "Guía",
+    "Suscriptores",
+    "Suscripciones activas",
+    "Suscripciones vencidas",
+    "Pagos de suscripciones",
+    "Renovaciones",
+    "Cancelaciones",
+    "Ingresos por membresías"
+  ],
+  "order": [
+    "DEMO-88ed00e5-2670-45d5-9bde-74e536fbd2c3",
+    "DEMO-UI-5c46ce376d84468a-customer",
+    "Entregado",
+    "Devuelto",
+    "2026-11-05 10:58",
+    12.34
+  ],
+  "movements": [
+    {
+      "quantity": -1,
+      "reason": "Reserva",
+      "reference": "DEMO-88ed00e5-2670-45d5-9bde-74e536fbd2c3"
+    },
+    {
+      "quantity": 1,
+      "reason": "Retorno físico",
+      "reference": "DEMO-88ed00e5-2670-45d5-9bde-74e536fbd2c3"
+    }
+  ],
+  "stock": 2,
+  "manualSubscription": {
+    "id": "9d1021af-a16c-43ac-8339-307d4c11ffa3",
+    "state": "refunded",
+    "terms": 7,
+    "allRefunded": true
+  },
+  "activeSubscriptions": 0,
+  "netMembershipIncome": 0,
+  "realCharges": 0,
+  "sha256": "25ae3542ebc24da2dcc139758514be33e19e14394d6ca7f5e8ff902193cc1394",
+  "limitations": "Datos leídos del XLSX real descargado. No se recalcularon fórmulas en Microsoft Excel ni se verificaron gráficos."
+}
