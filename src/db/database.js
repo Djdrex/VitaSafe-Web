@@ -23,6 +23,12 @@ async function openDatabase(env=process.env,options={}){
  },async query(sql,args=[]){if(context.getStore()?.database!==db)return db.withConnection(()=>db.query(sql,args));const client=context.getStore()?.database===db?context.getStore().client:raw;if(kind==='sqlite'){if(!args.length&&/^(BEGIN|COMMIT|ROLLBACK|CREATE|ALTER|PRAGMA)/.test(sql)){client.exec(sql);return {rows:[],rowCount:0}}const stmt=client.prepare(sql.replace(/ FOR UPDATE$/,''));if(/^\s*(SELECT|WITH|PRAGMA)/i.test(sql))return {rows:stmt.all(...args)};const r=stmt.run(...args);return {rows:[],rowCount:r.changes}}return normalize(await client.query(pgSQL(sql),args))},
  prepare(sql){return {all:async(...args)=>(await db.query(sql,args)).rows,get:async(...args)=>(await db.query(sql,args)).rows[0],run:async(...args)=>({changes:(await db.query(sql,args)).rowCount})}},
  async exec(sql){return db.query(sql)},async transaction(fn){return db.withConnection(async()=>{await db.exec('BEGIN');try{const result=await fn();await db.exec('COMMIT');return result}catch(e){await db.exec('ROLLBACK');throw e}})},async close(){if(kind==='sqlite')raw.close();else if(kind==='postgres')await raw.end();else await raw.close()}};
+ if(options.readOnly||options.initialize===false){
+  if(kind==='sqlite')throw Error('Read-only backup requires PostgreSQL');
+  const original=db.withConnection;
+  db.withConnection=fn=>original(async()=>{await rawQuery('SET search_path TO vitasafe_stage_app,public');if(options.readOnly)await rawQuery('SET default_transaction_read_only=on');return fn()});
+  return db;
+ }
  await db.withConnection(async()=>{
   await db.exec('BEGIN');try{
    if(kind==='sqlite'){raw.exec('PRAGMA foreign_keys=ON');for(const table of schema)raw.exec(table.sql.replace('CREATE TABLE ','CREATE TABLE IF NOT EXISTS '));try{raw.exec('ALTER TABLE sessions ADD COLUMN user_id TEXT')}catch(e){if(!/duplicate column/.test(e.message))throw e}}
