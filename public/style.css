@@ -27,3 +27,9 @@ html[data-theme="dark"] .productInfo p { color: #c6d6cc; }
   html { scroll-behavior: auto; }
   .reveal { transition: none; }
 }
+
+/* Dark theme must also cover the hero: inherited light text needs a dark surface. */
+html[data-theme="dark"] .hero{background:#101c18;color:#e7f0e9}
+html[data-theme="dark"] .heroCopy>p,html[data-theme="dark"] .heroMini{color:#c6d6cc}
+html[data-theme="dark"] .heroCopy .eyebrow.dark{color:#b5d0bf}
+html[data-theme="dark"] .heroCopy h1 em{color:#a6ceb4}
