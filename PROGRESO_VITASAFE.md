@@ -1,3 +1,28 @@
+# 18 de noviembre de 2026 · Respaldo privado preparado y contraste corregido
+
+Continúa 0.10.0-preview; NO candidata aprobada para lanzamiento. Rama `v06-postgres-excel-onedrive`, PR #2 en borrador; main conserva `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. No se activaron ventas, pagos, correos ni sincronización automática. AutoDeploy confirmado `no`; web aislada Free. Sin gastos ni cambios de plan.
+
+## Implementación y pruebas nuevas
+
+- Código de respaldo `7a2a54ceae1f39ca189b0e587a662cddf123455c`, Live en `dep-dbure3ec6qcc73b6bgo0`: **67/67 local y Render**, cero fallos. Lectura PostgreSQL interna confirmada por `Isolated database read check passed`. La suite usa PGlite y dobles de proveedores; no representa una restauración remota.
+- Apertura PostgreSQL de solo lectura sin inicialización/migraciones para el comando de copia. Snapshot lógico transaccional, AES-256-GCM existente conservado. No se creó copia de la base real porque falta la configuración segura de clave y OAuth.
+- Módulo manual OneDrive: permisos mínimos AppFolder, estructura privada solicitada dentro de Apps/aplicación, rechazo de carpetas compartidas o permisos no comprobables, cifrado antes de red, nombre SHA-256, verificación de descarga y descifrado, sin enlaces públicos. Límite 25 MiB, sin carga fragmentada. Botón administrativo condicionado a configuración y `VITASAFE_BACKUP_UPLOAD_ENABLED=true`. Ningún cron activado.
+- Dos pruebas nuevas: restauración desechable en motor local, rechazo de destino ocupado, rechazo de texto plano antes de red, carpeta compartida y archivo alterado; reapertura de lectura con persistencia y rechazo de DELETE. Graph es simulado: compatibilidad de permisos/redirecciones debe verificarse en Microsoft real.
+- Revisión de OAuth existente: estado de un uso, PKCE, tokens cifrados; comprobación de rol al renovar token reutilizada por reportes y respaldos.
+- Defecto visual real reproducido en navegador a 1363 px: título claro sobre fondo claro en modo oscuro. Corrección CSS de superficie y textos del hero en `dd189e9ebb1b93b65bb22da4b23fa997b5be9b11`.
+
+## Límites y siguiente paso exacto
+
+1. Seguir `docs/RESPALDOS_ONEDRIVE_OPERACION.md`: registrar aplicación Microsoft personal, configurar secretos y claves separadas directamente en Render y custodiar VITASAFE_BACKUP_KEY fuera de OneDrive. Luego entrar a Datos y Excel → Autorizar Microsoft. NO enviar secretos por chat. Permisos delegados Files.ReadWrite.AppFolder y offline_access. El consentimiento real todavía no se realizó; carpetas reales no creadas.
+2. Con custodia y consentimiento listos, habilitar solo el respaldo MANUAL, copiar, descargar y verificar. No afirmar restauración porque `verified:true` todavía informa `restored:false`.
+3. Solicitar autorización de gasto para destino vacío PostgreSQL 18 Oregon, red interna. Referencia US$6/mes + US$0.30/GB/mes; ejemplo 1 GB US$6.30/mes, 24 h aproximadamente US$0.21, sin impuestos/transferencia/ejecutor. Confirmar importe en cuenta antes de contratar. No se creó instancia ni se cambió el plan de la existente. No borrar destino sin autorización.
+4. Restaurar exclusivamente al destino vacío, validar conteos/archivos/roles/reportes y reinicio. La restauración remota es bloqueo crítico aún pendiente. La base original Free sigue disponible y expira el 24/11/2026 a las 00:28:56 Lima, según Render.
+5. Checkout visual de cliente registrado y Premium en dos sesiones independientes continúan pendientes. No repetir pedidos/membresías históricas. Las pestañas del mismo perfil no son sesiones independientes. Las restricciones de ventana privada/DevTools previas no se eludieron.
+6. El redimensionamiento normal mediante gestor de ventanas no cambió los 1363 px disponibles: móvil/tablet siguen sin verificar. No se probaron dispositivos físicos ni lector de pantalla. Inspección AX no equivale a lector de pantalla. Revisión completa de contraste, carga y configuración comercial sigue pendiente.
+7. No se repitió npm audit: último resultado 0 vulnerabilidades del 17/11/2026, dependencias sin cambios. Documentación técnica nueva `docs/RESPALDOS_ONEDRIVE_OPERACION.md`, commit documental previo `b3d02ce2210a065c0b16c2417b2524c4fba2c60a`.
+
+---
+
 # 17 de noviembre de 2026 · Checkout de invitado y cierre de Excel
 
 Código desplegado **9611ee2d48eaa2b2aa3dfc9018a47b4f837baf3f**, Render **Live** en `dep-dbuhsd5g1s2s73bth9c0`. Rama `v06-postgres-excel-onedrive`, PR #2 abierto en borrador. Main continúa en `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. AutoDeploy comprobado en `no` antes del despliegue manual; web Free y entorno aislado. Versión sigue 0.10.0-preview: todavía no es candidata aprobada para lanzamiento. Este documento y las evidencias se guardan en commits posteriores, sin redesplegar por cambios documentales.
