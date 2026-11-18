@@ -249,7 +249,7 @@ async function api(req, res, u) {
     await accountMail.confirm(email,b.purpose,b.code,b.password);
     return json(res,200,{ok:true});
   }
-  if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
+  if (DEMO_MODE && m !== 'GET' && !['/api/auth/login', '/api/account/login', '/api/auth/logout', '/api/account/logout', '/api/admin/excel/preview', '/api/admin/excel/test-apply', '/api/admin/onedrive/connect', '/api/admin/onedrive/sync', '/api/admin/onedrive/backup', '/api/admin/onedrive/disconnect'].includes(p)) fail(403, 'Vista de demostración: registros, compras y cambios están deshabilitados. No ingreses datos reales.');
   if (p === '/api/health') return json(res, 200, {
     ok: true,
     version: '0.10.0-preview',
