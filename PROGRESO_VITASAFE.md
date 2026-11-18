@@ -2,6 +2,8 @@
 
 Continúa 0.10.0-preview; NO candidata aprobada para lanzamiento. Rama `v06-postgres-excel-onedrive`, PR #2 en borrador; main conserva `d3ba56bebde80c672246c05fc8fa19a67b7d0415`. No se activaron ventas, pagos, correos ni sincronización automática. AutoDeploy confirmado `no`; web aislada Free. Sin gastos ni cambios de plan.
 
+Código final **dd189e9ebb1b93b65bb22da4b23fa997b5be9b11 Live**, despliegue `dep-dburfmp5efls73f7k93g`, 67/67 en Render y lectura PostgreSQL aprobada. Corrección del hero verificada en navegador desplegado: fondo rgb(16,28,24), título rgb(231,240,233). Evidencia `docs/CONTRASTE_20261118.jpg`. Este documento se guarda después sin redesplegar.
+
 ## Implementación y pruebas nuevas
 
 - Código de respaldo `7a2a54ceae1f39ca189b0e587a662cddf123455c`, Live en `dep-dbure3ec6qcc73b6bgo0`: **67/67 local y Render**, cero fallos. Lectura PostgreSQL interna confirmada por `Isolated database read check passed`. La suite usa PGlite y dobles de proveedores; no representa una restauración remota.
